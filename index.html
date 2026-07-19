@@ -1,0 +1,162 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>H4X Lifafa - Login</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; }
+        body { background: #ffffff; min-height: 100vh; display: flex; justify-content: center; align-items: center; padding: 20px; }
+        
+        .card { background: #ffffff; border-radius: 20px; padding: 40px 30px; width: 100%; max-width: 420px; box-shadow: 0 10px 40px rgba(0,0,0,0.08); text-align: center; border: 1px solid #f0f0f0; transition: all 0.3s ease; }
+        
+        h2 { color: #1a1a1a; font-size: 28px; margin-bottom: 8px; font-weight: 700; }
+        p.subtitle { color: #888; font-size: 14px; margin-bottom: 30px; }
+        
+        .input-group { margin-bottom: 20px; text-align: left; }
+        .input-group label { display: block; font-size: 13px; color: #555; font-weight: 600; margin-bottom: 6px; }
+        .input-group input { width: 100%; padding: 14px 16px; border: 2px solid #e8e8e8; border-radius: 12px; font-size: 15px; outline: none; transition: all 0.3s ease; background: #fafafa; }
+        .input-group input:focus { border-color: #ff4757; background: #ffffff; box-shadow: 0 0 10px rgba(255, 71, 87, 0.1); }
+        
+        .forgot-link { display: block; text-align: right; font-size: 13px; color: #ff4757; font-weight: 600; text-decoration: none; margin-top: -10px; margin-bottom: 25px; cursor: pointer; }
+        
+        /* Premium Glowing Button */
+        .glow-btn { width: 100%; padding: 14px; border: none; border-radius: 12px; font-size: 16px; font-weight: 700; color: white; background: linear-gradient(135deg, #ff4757, #ff6b81); cursor: pointer; transition: all 0.3s ease; box-shadow: 0 4px 15px rgba(255, 71, 87, 0.4); }
+        .glow-btn:hover { box-shadow: 0 0 25px rgba(255, 71, 87, 0.7); transform: translateY(-2px); }
+        .glow-btn:active { transform: translateY(0); }
+        
+        .switch-page { margin-top: 25px; font-size: 14px; color: #666; }
+        .switch-page a { color: #ff4757; font-weight: 600; text-decoration: none; }
+        
+        /* Modal Overlay for Forgot Password */
+        .modal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.4); justify-content: center; align-items: center; z-index: 1000; padding: 20px; backdrop-filter: blur(4px); }
+        .modal-content { background: #ffffff; padding: 35px 25px; border-radius: 20px; width: 100%; max-width: 400px; box-shadow: 0 20px 50px rgba(0,0,0,0.15); text-align: center; animation: slideUp 0.3s ease; }
+        
+        @keyframes slideUp { from { transform: translateY(20px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
+        .close-modal { display: inline-block; margin-top: 15px; color: #888; font-size: 13px; cursor: pointer; text-decoration: underline; }
+    </style>
+</head>
+<body>
+
+    <div class="card">
+        <h2>Welcome Back</h2>
+        <p class="subtitle">Log in to your H4X Lifafa account</p>
+        
+        <form id="login-form">
+            <div class="input-group">
+                <label>Username / Email / Phone Number</label>
+                <input type="text" id="login-identity" required placeholder="Enter anything...">
+            </div>
+            
+            <div class="input-group">
+                <label>Password</label>
+                <input type="password" id="login-password" required placeholder="••••••••">
+            </div>
+            
+            <a class="forgot-link" onclick="toggleModal(true)">Forgot Password?</a>
+            
+            <button type="submit" class="glow-btn">LOG IN</button>
+        </form>
+        
+        <p class="switch-page">Don't have an account? <a href="register.html">Register here</a></p>
+    </div>
+
+    <!-- Forget Password Modal -->
+    <div class="modal" id="forgot-modal">
+        <div class="modal-content">
+            <h2>Reset Password</h2>
+            <p class="subtitle" style="margin-bottom: 20px;">Enter your registered email to receive a password reset link.</p>
+            
+            <div class="input-group">
+                <label>Email Address</label>
+                <input type="email" id="reset-email" placeholder="example@gmail.com">
+            </div>
+            
+            <button type="button" id="reset-btn" class="glow-btn">SEND RESET LINK</button>
+            <br>
+            <span class="close-modal" onclick="toggleModal(false)">Back to Login</span>
+        </div>
+    </div>
+
+    <!-- Firebase SDKs -->
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-auth-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-database-compat.js"></script>
+
+    <script>
+        const firebaseConfig = {
+            apiKey: "AIzaSyD2TYdbhZwLSQJEfV2tHOawK-XzKvOKlkQ",
+            authDomain: "h4xlifafa.firebaseapp.com",
+            databaseURL: "https://h4xlifafa-default-rtdb.firebaseio.com",
+            projectId: "h4xlifafa",
+            storageBucket: "h4xlifafa.firebasestorage.app",
+            messagingSenderId: "51114522531",
+            appId: "1:51114522531:web:face1332e055ed44690c16",
+            measurementId: "G-LG592K8LML"
+        };
+        firebase.initializeApp(firebaseConfig);
+        const auth = firebase.auth();
+        const db = firebase.database();
+
+        // Modal open/close logic
+        function toggleModal(show) {
+            document.getElementById('forgot-modal').style.display = show ? 'flex' : 'none';
+        }
+
+        // Login Logic
+        document.getElementById('login-form').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const identity = document.getElementById('login-identity').value.trim();
+            const password = document.getElementById('login-password').value;
+            let email = identity;
+
+            // Agar user ne email nahi daala (Username ya Phone number dala hai)
+            if (!identity.includes('@')) {
+                alert("Checking database for identity...");
+                // Database ke 'users' node me search karenge
+                const snapshot = await db.ref('users').once('value');
+                let foundEmail = null;
+                
+                snapshot.forEach((childSnapshot) => {
+                    const userData = childSnapshot.val();
+                    if (userData.username === identity || userData.phone === identity) {
+                        foundEmail = userData.email;
+                    }
+                });
+
+                if (foundEmail) {
+                    email = foundEmail;
+                } else {
+                    alert("No account found with this Username or Phone number!");
+                    return;
+                }
+            }
+
+            // Real login process
+            auth.signInWithEmailAndPassword(email, password)
+                .then((userCredential) => {
+                    alert("Login Successful! Welcome to Dashboard.");
+                    // Aage dashboard page par redirect kar dena yahan se
+                })
+                .catch((error) => {
+                    alert("Error: " + error.message);
+                });
+        });
+
+        // Forget Password Link Logic
+        document.getElementById('reset-btn').addEventListener('click', () => {
+            const emailInput = document.getElementById('reset-email').value.trim();
+            if(!emailInput) return alert("Please enter your email first!");
+
+            auth.sendPasswordResetEmail(emailInput)
+                .then(() => {
+                    alert("Password reset link sent to your email successfully!");
+                    toggleModal(false);
+                })
+                .catch((error) => {
+                    alert("Error: " + error.message);
+                });
+        });
+    </script>
+</body>
+</html>

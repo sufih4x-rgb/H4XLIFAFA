@@ -1,0 +1,547 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>H4X Premium - Deposit Wallet</title>
+    <!-- Local QR Code Engine for accurate scanner detection -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+    <style>
+        :root {
+            --bg-main: #ffffff;
+            --text-main: #1e293b;
+            --text-sub: #64748b;
+            --card-bg: #ffffff;
+            --card-border: #e2e8f0;
+            --input-bg: #f8fafc;
+            --input-border: #cbd5e1;
+            --primary-glow: #ff4757;
+            --secondary-glow: #ff6b81;
+            --cyan-glow: #00dfd8;
+            --green: #2ed573;
+            --red: #ff4757;
+            --amber: #ffa500;
+        }
+        * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Segoe UI', sans-serif; }
+        body { background-color: #f1f5f9; color: var(--text-main); min-height: 100vh; display: flex; justify-content: center; align-items: center; padding: 20px; }
+        .card { background: var(--card-bg); border: 1px solid var(--card-border); width: 100%; max-width: 460px; border-radius: 24px; padding: 28px; position: relative; box-shadow: 0 10px 30px rgba(0,0,0,0.05); }
+        .card-header-bar { position: absolute; top: 0; left: 0; width: 100%; height: 5px; background: linear-gradient(90deg, var(--primary-glow), var(--secondary-glow), var(--cyan-glow)); border-top-left-radius: 24px; border-top-right-radius: 24px; }
+        h2 { text-align: center; font-size: 24px; font-weight: 800; color: #0f172a; }
+        .sub { text-align: center; color: var(--text-sub); margin-bottom: 24px; font-size: 13.5px; margin-top: 4px; }
+        .balance-box { background: linear-gradient(135deg, #0f172a 0%, #1e293b 100%); color: white; padding: 22px; border-radius: 20px; text-align: center; margin-bottom: 24px; }
+        .balance-box h3 { font-size: 11px; opacity: 0.7; letter-spacing: 1.5px; text-transform: uppercase; }
+        .balance-box h1 { font-size: 34px; font-weight: 800; margin-top: 6px; }
+        .input-group { margin-bottom: 20px; }
+        .input-label { font-size: 12px; font-weight: 700; display: block; margin-bottom: 6px; text-transform: uppercase; }
+        input { width: 100%; background: var(--input-bg); border: 2px solid var(--input-border); padding: 16px; border-radius: 14px; font-size: 18px; font-weight: 700; text-align: center; outline: none; }
+        input:focus { border-color: var(--primary-glow); background: #ffffff; }
+        .btn-glow { width: 100%; padding: 16px; background: linear-gradient(90deg, var(--primary-glow), var(--secondary-glow)); color: white; border: none; border-radius: 14px; font-size: 16px; font-weight: 700; cursor: pointer; box-shadow: 0 4px 15px rgba(255, 71, 87, 0.3); }
+        .btn-cancel { width: 100%; padding: 12px; background: #cbd5e1; color: #1e293b; border: none; border-radius: 14px; font-size: 14px; font-weight: 700; cursor: pointer; margin-top: 10px; }
+        .method-selection-container { display: none; margin-top: 20px; background: #f8fafc; border: 1px solid var(--card-border); border-radius: 16px; padding: 16px; }
+        .method-title { font-size: 13px; font-weight: 700; color: var(--text-sub); text-align: center; margin-bottom: 12px; text-transform: uppercase; }
+        .method-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+        .method-box { background: #ffffff; border: 2px solid var(--card-border); border-radius: 12px; padding: 14px; text-align: center; cursor: pointer; font-weight: 700; }
+        .method-box.active { border-color: var(--primary-glow); }
+        .payment-panel { display: none; margin-top: 20px; text-align: center; }
+        #qrWrapper { width: 220px; height: 220px; margin: 15px auto; padding: 10px; background: white; border-radius: 14px; border: 1px solid var(--card-border); display: flex; align-items: center; justify-content: center; }
+        .apps-list { display: flex; flex-direction: column; gap: 12px; margin-top: 15px; }
+        .app-btn { border: none; border-radius: 14px; padding: 15px; color: white; font-weight: 700; display: block; text-align: center; font-size: 15px; cursor: pointer; transition: 0.2s; box-shadow: 0 4px 10px rgba(0,0,0,0.05); text-decoration: none; }
+        .app-btn.phonepe { background: #5f259f; }
+        .app-btn.paytm { background: #00baf2; color: #000; }
+        .app-btn.gpay { background: #4285f4; }
+        .app-btn.generic { background: linear-gradient(90deg, #00dfd8, #7928ca); }
+        .app-btn:hover { opacity: 0.9; transform: translateY(-1px); }
+        .warning-paisa { font-size: 13px; color: #b45309; background: #fffbeb; padding: 12px 16px; border-radius: 12px; margin-top: 15px; border: 1px solid #fef3c7; font-weight: 600; }
+        .timer-badge { text-align: center; font-size: 12.5px; font-weight: 700; color: #fff; background: var(--red); padding: 8px; border-radius: 10px; margin-top: 15px; }
+        .statement-container { margin-top: 28px; }
+        .statement-title { font-size: 14px; font-weight: 800; margin-bottom: 10px; text-transform: uppercase; }
+        .history-scroll { max-height: 200px; overflow-y: auto; display: flex; flex-direction: column; gap: 10px; }
+        .row { background: #ffffff; border: 1px solid var(--card-border); padding: 12px; border-radius: 12px; cursor: pointer; transition: 0.2s; }
+        .row:hover { background: #f8fafc; border-color: var(--primary-glow); }
+        .row-header { display: flex; justify-content: space-between; font-weight: 700; }
+        .status { font-weight: 800; font-size: 11px; text-transform: uppercase; }
+        .status.pending { color: var(--amber); }
+        .status.approved { color: var(--green); }
+        .status.expired { color: var(--red); }
+        .status.failed { color: #7f1d1d; }
+        .status.cancelled { color: #64748b; }
+        .modal-overlay { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); z-index: 1000; align-items: center; justify-content: center; padding: 20px; }
+        .modal-overlay.active { display: flex; }
+        .floating-box { background: #ffffff; border-radius: 20px; width: 100%; max-width: 400px; padding: 24px; box-shadow: 0 20px 40px rgba(0,0,0,0.2); position: relative; }
+        .modal-title { font-size: 18px; font-weight: 800; margin-bottom: 15px; text-align: center; border-bottom: 1px dashed #e2e8f0; padding-bottom: 10px; }
+        .modal-detail-row { display: flex; justify-content: space-between; margin-bottom: 10px; font-size: 13.5px; font-weight: 600; }
+        .modal-detail-row span:first-child { color: var(--text-sub); }
+        .utr-input-box { margin-top: 15px; border-top: 1px solid #e2e8f0; padding-top: 15px; }
+        .close-modal-btn { position: absolute; top: 15px; right: 20px; font-size: 20px; font-weight: 700; cursor: pointer; color: var(--text-sub); }
+        .screen-overlay { display: none; background: #ffffff; position: absolute; top:0; left:0; width:100%; height:100%; z-index:99; border-radius:24px; align-items:center; justify-content:center; flex-direction:column; padding:24px; }
+        .screen-overlay.active { display: flex; }
+    </style>
+</head>
+<body>
+
+<div class="card">
+    <div class="card-header-bar"></div>
+    <h2>Deposit Funds</h2>
+    <p class="sub">H4X Lifafa Premium Wallet Gateway</p>
+    <div class="balance-box">
+        <h3>Current Balance</h3>
+        <h1>₹<span id="balanceDisplay">0.00</span></h1>
+    </div>
+    <div class="input-group">
+        <label class="input-label">Enter Amount (₹)</label>
+        <input type="number" id="amountInput" placeholder="Enter Amount">
+    </div>
+    <button id="payProceedBtn" class="btn-glow" onclick="showPaymentOptions()">Proceed to Pay</button>
+    
+    <div id="methodSelection" class="method-selection-container">
+        <p class="method-title">Select Protocol</p>
+        <div class="method-grid">
+            <div id="methodQR" class="method-box" onclick="selectPaymentMode('QR')">📸 Scan QR</div>
+            <div id="methodApps" class="method-box" onclick="selectPaymentMode('APPS')">📱 Pay App</div>
+        </div>
+    </div>
+    
+    <div id="qrPanel" class="payment-panel">
+        <div id="timerContainer" class="timer-badge">EXPIRES IN: <span id="countdown">05:00</span></div>
+        <div id="paisaNotice" class="warning-paisa"></div>
+        <div id="qrWrapper"></div>
+        <button class="btn-cancel" onclick="cancelCurrentTransaction()">❌ Cancel Payment</button>
+    </div>
+    
+    <div id="appsPanel" class="payment-panel">
+        <div id="paisaNoticeApps" class="warning-paisa"></div>
+        <div class="apps-list" id="paymentAppsContainer"></div>
+        <button class="btn-cancel" onclick="cancelCurrentTransaction()">❌ Cancel Payment</button>
+    </div>
+    
+    <div class="statement-container">
+        <h3 class="statement-title">📋 Recent Logs (Click to Settle/Verify)</h3>
+        <div class="history-scroll" id="historyContainer"></div>
+    </div>
+    
+    <div id="successScreen" class="screen-overlay">
+        <h1 style="color:var(--green); margin-bottom:10px;">✔ Verified</h1>
+        <p>Payment has been auto-credited successfully.</p>
+        <button class="btn-glow" style="margin-top:20px;" onclick="window.location.href='dashboard.html'">Go to Dashboard</button>
+    </div>
+</div>
+
+<div class="modal-overlay" id="txnModal">
+    <div class="floating-box">
+        <span class="close-modal-btn" onclick="closeTxnModal()">&times;</span>
+        <div class="modal-title">Transaction Settle Desk</div>
+        <div id="modalDetails"></div>
+        <div class="utr-input-box" id="utrActionArea"></div>
+    </div>
+</div>
+
+<!-- Hidden Iframe for forceful native intent routing -->
+<iframe id="paymentFallbackFrame" style="display:none; width:0; height:0; border:none;"></iframe>
+
+<script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
+    import { getDatabase, ref, onValue, set, get, update } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-database.js";
+    import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
+
+    const firebaseConfig = {
+        apiKey: "AIzaSyD2TYdbhZwLSQJEfV2tHOawK-XzKvOKlkQ",
+        authDomain: "h4xlifafa.firebaseapp.com",
+        databaseURL: "https://h4xlifafa-default-rtdb.firebaseio.com",
+        projectId: "h4xlifafa",
+        storageBucket: "h4xlifafa.firebasestorage.app",
+        messagingSenderId: "51114522531",
+        appId: "1:51114522531:web:face1332e055ed44690c16"
+    };
+
+    const app = initializeApp(firebaseConfig);
+    const db = getDatabase(app);
+    const auth = getAuth(app);
+    
+    let uid = "";
+    let ADMIN_UPI = "";
+    let MIN_LIMIT = 1;
+    let MAX_LIMIT = 100000;
+    let countdownTimer = null;
+    let globalRequests = {};
+
+    onValue(ref(db, "settings"), (snap) => {
+        if(snap.exists()) {
+            const data = snap.val();
+            ADMIN_UPI = data.admin_upi || "";
+            MIN_LIMIT = parseFloat(data.min_amount || 1);
+            MAX_LIMIT = parseFloat(data.max_amount || 100000);
+        }
+    });
+
+    onAuthStateChanged(auth, (user) => {
+        if (user) { 
+            uid = user.uid; 
+            loadWalletAndLogs();
+            checkPersistentSession();
+            listenToMacroSMS();
+        } else { 
+            window.location.href = "index.html"; 
+        }
+    });
+
+    // Dashboard database path node matched ('users/uid/wallet_balance')
+    function loadWalletAndLogs() {
+        onValue(ref(db, `users/${uid}`), (snap) => {
+            if(snap.exists()) {
+                const data = snap.val();
+                const currentBal = parseFloat(data.wallet_balance || 0);
+                document.getElementById("balanceDisplay").innerText = currentBal.toFixed(2);
+            }
+        });
+
+        onValue(ref(db, "user_requests"), (snap) => {
+            let html = "";
+            globalRequests = {};
+            if(snap.exists()){
+                let logs = [];
+                snap.forEach(c => { 
+                    if(c.val().uid === uid) {
+                        logs.push({ txnId: c.key, ...c.val() });
+                        globalRequests[c.key] = c.val();
+                    }
+                });
+                logs.reverse().forEach(d => {
+                    html += `
+                    <div class="row" onclick="openTxnModal('${d.txnId}')">
+                        <div class="row-header">
+                            <span>₹${parseFloat(d.payable_amount || d.amount).toFixed(2)}</span>
+                            <span class="status ${d.status}">${d.status}</span>
+                        </div>
+                    </div>`;
+                });
+            }
+            document.getElementById("historyContainer").innerHTML = html || "No records.";
+        });
+    }
+
+    function listenToMacroSMS() {
+        onValue(ref(db, "macro_sms"), (snap) => {
+            let currentTxn = localStorage.getItem("active_txn_id");
+            let currentPayableStr = localStorage.getItem("active_txn_payable");
+            
+            if(snap.exists() && currentTxn && currentPayableStr) {
+                let currentPayable = parseFloat(currentPayableStr).toFixed(2);
+                
+                snap.forEach(msgNode => {
+                    let sms = msgNode.val();
+                    let smsRawText = sms.sms_text || "";
+                    let smsContent = smsRawText.toLowerCase().replace(/\s+/g, '');
+                    
+                    if(smsContent.includes(currentPayable.toString()) && 
+                      (smsContent.includes("credited") || smsContent.includes("received") || smsContent.includes("sent") || smsContent.includes("deposit"))) {
+                        
+                        let detectedUtr = "";
+                        let matches = smsRawText.match(/\b\d{12}\b/);
+                        if(matches && matches.length > 0) {
+                            detectedUtr = matches[0];
+                        }
+                        
+                        triggerInstantWalletCredit(currentTxn, detectedUtr);
+                    }
+                });
+            }
+        });
+    }
+
+    async function triggerInstantWalletCredit(txnId, detectedUtr) {
+        const txnRef = ref(db, `user_requests/${txnId}`);
+        const snap = await get(txnRef);
+        if(snap.exists() && snap.val().status !== "approved") {
+            clearInterval(countdownTimer);
+            
+            let creditAmt = parseFloat(snap.val().amount);
+            let finalUtr = detectedUtr || "AUTO_" + Date.now();
+            
+            await set(ref(db, `used_utrs/${finalUtr}`), { 
+                txnId: txnId, 
+                uid: uid, 
+                amount: snap.val().payable_amount, 
+                timestamp: Date.now() 
+            });
+
+            // UPDATED: Sync node directly matching user dashboard profile system path
+            const userRef = ref(db, `users/${uid}`);
+            const userSnap = await get(userRef);
+            let currentBal = 0;
+            if(userSnap.exists()){
+                currentBal = parseFloat(userSnap.val().wallet_balance || 0);
+            }
+            let updatedBal = currentBal + creditAmt;
+            
+            await update(userRef, { wallet_balance: updatedBal });
+            await update(txnRef, { status: "approved", utr: finalUtr });
+            
+            cleanStorageSession();
+            document.getElementById("successScreen").classList.add("active");
+        }
+    }
+
+    function checkPersistentSession() {
+        let savedTxn = localStorage.getItem("active_txn_id");
+        let savedExpiry = localStorage.getItem("active_txn_expiry");
+        let savedPayable = localStorage.getItem("active_txn_payable");
+        if(savedTxn && savedExpiry) {
+            let timeLeft = Math.floor((parseInt(savedExpiry) - Date.now()) / 1000);
+            if(timeLeft > 0) {
+                document.getElementById("payProceedBtn").style.display = "none";
+                document.getElementById("methodSelection").style.display = "block";
+                document.getElementById("amountInput").value = Math.floor(parseFloat(savedPayable));
+                selectPaymentMode('QR');
+            } else {
+                cleanStorageSession();
+            }
+        }
+    }
+
+    window.showPaymentOptions = async () => {
+        let amt = parseFloat(document.getElementById("amountInput").value);
+        if(!amt || amt < MIN_LIMIT || amt > MAX_LIMIT) return alert(`Limit error. Enter between ₹${MIN_LIMIT} and ₹${MAX_LIMIT}`);
+        if(!ADMIN_UPI) return alert("Gateway Configuration missing admin UPI endpoint.");
+        
+        let paise = Math.floor(Math.random() * 90) + 10; 
+        let finalPay = Math.floor(amt) + "." + paise;
+        let txn = "TXN" + Date.now();
+        let expiry = Date.now() + 300000; 
+
+        await set(ref(db, `user_requests/${txn}`), {
+            uid: uid,
+            amount: Math.floor(amt),
+            payable_amount: parseFloat(finalPay),
+            status: "pending",
+            time: Date.now(),
+            expiryTime: expiry,
+            utr: ""
+        });
+
+        localStorage.setItem("active_txn_id", txn);
+        localStorage.setItem("active_txn_expiry", expiry);
+        localStorage.setItem("active_txn_payable", finalPay);
+
+        document.getElementById("payProceedBtn").style.display = "none";
+        document.getElementById("methodSelection").style.display = "block";
+        selectPaymentMode('QR');
+    };
+
+    window.launchAppUrl = (targetApp) => {
+        let txn = localStorage.getItem("active_txn_id");
+        let payable = localStorage.getItem("active_txn_payable");
+        if(!txn || !payable) return;
+
+        let encodedpa = encodeURIComponent(ADMIN_UPI);
+        let baseUpi = `upi://pay?pa=${encodedpa}&pn=H4X-GATEWAY&am=${payable}&cu=INR&tn=${txn}`;
+        let finalUrl = baseUpi;
+
+        if (targetApp === 'phonepe') {
+            finalUrl = `phonepe://pay?pa=${encodedpa}&pn=H4X-GATEWAY&am=${payable}&cu=INR&tn=${txn}`;
+        } else if (targetApp === 'paytm') {
+            finalUrl = `paytmmp://pay?pa=${encodedpa}&pn=H4X-GATEWAY&am=${payable}&cu=INR&tn=${txn}`;
+        } else if (targetApp === 'gpay') {
+            finalUrl = `tez://upi/pay?pa=${encodedpa}&pn=H4X-GATEWAY&am=${payable}&cu=INR&tn=${txn}`;
+        }
+
+        window.location.href = finalUrl;
+
+        setTimeout(() => {
+            try {
+                document.getElementById("paymentFallbackFrame").src = finalUrl;
+            } catch(e) { console.log("Iframe route block fallback bypass"); }
+        }, 250);
+
+        setTimeout(() => {
+            let a = document.createElement('a');
+            a.href = finalUrl;
+            a.target = '_blank';
+            a.click();
+        }, 500);
+    };
+
+    window.selectPaymentMode = (mode) => {
+        let txn = localStorage.getItem("active_txn_id");
+        let payable = localStorage.getItem("active_txn_payable");
+        let expiry = localStorage.getItem("active_txn_expiry");
+        if(!txn || !payable || !expiry) return;
+
+        let cleanUpiString = `upi://pay?pa=${ADMIN_UPI}&pn=H4X-GATEWAY&am=${payable}&cu=INR&tn=${txn}`;
+
+        if(mode === 'QR') {
+            document.getElementById("methodQR").classList.add("active");
+            document.getElementById("methodApps").classList.remove("active");
+            document.getElementById("qrPanel").style.display = "block";
+            document.getElementById("appsPanel").style.display = "none";
+            document.getElementById("paisaNotice").innerText = `⚠️ Pay Exactly: ₹${parseFloat(payable).toFixed(2)} (Do not change amount)`;
+            
+            document.getElementById("qrWrapper").innerHTML = "";
+            new QRCode(document.getElementById("qrWrapper"), {
+                text: cleanUpiString,
+                width: 200,
+                height: 200,
+                colorDark : "#0f172a",
+                colorLight : "#ffffff",
+                correctLevel : QRCode.CorrectLevel.M
+            });
+        } else {
+            document.getElementById("methodQR").classList.remove("active");
+            document.getElementById("methodApps").classList.add("active");
+            document.getElementById("qrPanel").style.display = "none";
+            document.getElementById("appsPanel").style.display = "block";
+            document.getElementById("paisaNoticeApps").innerText = `⚠️ Pay Exactly: ₹${parseFloat(payable).toFixed(2)}`;
+            
+            document.getElementById("paymentAppsContainer").innerHTML = `
+                <div class="app-btn phonepe" onclick="launchAppUrl('phonepe')">🟣 Open PhonePe</div>
+                <div class="app-btn paytm" onclick="launchAppUrl('paytm')">🔵 Open Paytm</div>
+                <div class="app-btn gpay" onclick="launchAppUrl('gpay')">🟢 Open Google Pay</div>
+                <div class="app-btn generic" onclick="launchAppUrl('generic')">🚀 Pay via Default UPI App</div>
+            `;
+        }
+        
+        let timeLeft = Math.floor((parseInt(expiry) - Date.now()) / 1000);
+        startTimer(timeLeft, txn);
+    };
+
+    function startTimer(duration, txnId) {
+        if(countdownTimer) clearInterval(countdownTimer);
+        let timer = duration;
+        countdownTimer = setInterval(async () => {
+            let m = Math.floor(timer / 60), s = timer % 60;
+            let displayElement = document.getElementById("countdown");
+            if(displayElement) displayElement.innerText = `${m}:${s<10?'0':''}${s}`;
+            
+            if (--timer < 0) { 
+                clearInterval(countdownTimer); 
+                const txnRef = ref(db, `user_requests/${txnId}`);
+                const currentSnap = await get(txnRef);
+                if(currentSnap.exists() && currentSnap.val().status === "pending") {
+                    await update(txnRef, { status: "expired" });
+                }
+                cleanStorageSession();
+                clearUIPanelView();
+            }
+        }, 1000);
+    }
+
+    window.cancelCurrentTransaction = async () => {
+        let txn = localStorage.getItem("active_txn_id");
+        if(txn) {
+            clearInterval(countdownTimer);
+            await update(ref(db, `user_requests/${txn}`), { status: "cancelled" });
+            cleanStorageSession();
+            clearUIPanelView();
+            alert("Transaction cancelled successfully.");
+        }
+    };
+
+    window.openTxnModal = (txnId) => {
+        const txnData = globalRequests[txnId];
+        if(!txnData) return;
+        let timeStr = new Date(txnData.time).toLocaleString();
+        let htmlDetails = `
+            <div class="modal-detail-row"><span>TXN ID:</span><span style="font-family:monospace;">${txnId}</span></div>
+            <div class="modal-detail-row"><span>Base Amount:</span><span>₹${txnData.amount}</span></div>
+            <div class="modal-detail-row"><span>Payable Target:</span><span style="color:var(--primary-glow); font-weight:800;">₹${parseFloat(txnData.payable_amount).toFixed(2)}</span></div>
+            <div class="modal-detail-row"><span>Time:</span><span>${timeStr}</span></div>
+            <div class="modal-detail-row"><span>Status:</span><span class="status ${txnData.status}">${txnData.status}</span></div>
+            <div class="modal-detail-row"><span>Real Linked UTR:</span><span style="color:var(--green); font-weight:bold;">${txnData.utr || '—'}</span></div>
+        `;
+        document.getElementById("modalDetails").innerHTML = htmlDetails;
+        let actionHtml = "";
+        
+        if(txnData.status === "pending" || txnData.status === "expired" || txnData.status === "failed") {
+            actionHtml = `
+                <div class="input-group" style="margin-bottom:10px;">
+                    <label class="input-label" style="text-align:left;">Submit 12-Digit UTR Number</label>
+                    <input type="text" id="modalUtrInput" placeholder="Enter UTR Number" style="font-size:15px; padding:10px;">
+                </div>
+                <button class="btn-glow" style="padding:10px;" onclick="validateAndSubmitUTR('${txnId}')">Instant Cross Check & Settle</button>
+            `;
+        }
+        document.getElementById("utrActionArea").innerHTML = actionHtml;
+        document.getElementById("txnModal").classList.add("active");
+    };
+
+    window.closeTxnModal = () => {
+        document.getElementById("txnModal").classList.remove("active");
+    };
+
+    window.validateAndSubmitUTR = async (txnId) => {
+        let utrValue = document.getElementById("modalUtrInput").value.trim();
+        if(utrValue.length < 10) return alert("Please type a valid Bank UTR reference string.");
+        
+        try {
+            const lockSnap = await get(ref(db, `used_utrs/${utrValue}`));
+            if(lockSnap.exists()) {
+                await update(ref(db, `user_requests/${txnId}`), { status: "failed", utr: utrValue });
+                alert("🚨 Already Done: This UTR has already been applied and locked in the database.");
+                closeTxnModal();
+                return;
+            }
+
+            const smsSnap = await get(ref(db, "macro_sms"));
+            const txnSnap = await get(ref(db, `user_requests/${txnId}`));
+            
+            let targetPayable = parseFloat(txnSnap.val().payable_amount).toFixed(2);
+            let targetAmount = parseFloat(txnSnap.val().amount);
+            let isVerified = false;
+
+            if(smsSnap.exists()) {
+                smsSnap.forEach(msgNode => {
+                    let text = (msgNode.val().sms_text || "").toLowerCase().replace(/\s+/g, '');
+                    let cleanUtr = utrValue.toLowerCase().replace(/\s+/g, '');
+                    
+                    if(text.includes(cleanUtr) && text.includes(targetPayable.toString())) {
+                        isVerified = true;
+                    }
+                });
+            }
+
+            if(isVerified) {
+                await set(ref(db, `used_utrs/${utrValue}`), { 
+                    txnId: txnId, 
+                    uid: uid, 
+                    amount: targetPayable, 
+                    timestamp: Date.now() 
+                });
+
+                // UPDATED: Sync node directly matching user dashboard profile system path
+                const userRef = ref(db, `users/${uid}`);
+                const userSnap = await get(userRef);
+                let currentBal = 0;
+                if(userSnap.exists()){
+                    currentBal = parseFloat(userSnap.val().wallet_balance || 0);
+                }
+                let updatedBal = currentBal + targetAmount;
+                
+                await update(userRef, { wallet_balance: updatedBal });
+                await update(ref(db, `user_requests/${txnId}`), { status: "approved", utr: utrValue });
+                
+                closeTxnModal();
+                if(localStorage.getItem("active_txn_id") === txnId) cleanStorageSession();
+                
+                document.getElementById("successScreen").classList.add("active");
+            } else {
+                alert("❌ Payment Not Found: Bank SMS database me abhi tak update nahi hua hai ya aapne exact random paise (₹" + targetPayable + ") nahi bheje hain.");
+            }
+        } catch(e) {
+            alert("Security State Exception: " + e.message);
+        }
+    };
+
+    function cleanStorageSession() {
+        localStorage.removeItem("active_txn_id");
+        localStorage.removeItem("active_txn_expiry");
+        localStorage.removeItem("active_txn_payable");
+    }
+
+    function clearUIPanelView() {
+        document.getElementById("payProceedBtn").style.display = "block";
+        document.getElementById("methodSelection").style.display = "none";
+        document.getElementById("qrPanel").style.display = "none";
+        document.getElementById("appsPanel").style.display = "none";
+    }
+</script>
+</body>
+</html>

@@ -1,0 +1,359 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>H4X Lifafa - Premium Withdrawal</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Segoe UI', sans-serif; }
+        body { background: #f8f9fa; min-height: 100vh; display: flex; flex-direction: column; align-items: center; padding: 15px; }
+        .container { width: 100%; max-width: 480px; display: flex; flex-direction: column; }
+        
+        .back-header { display: flex; align-items: center; gap: 15px; padding: 20px 0; border-bottom: 1px solid #eaeaea; margin-bottom: 20px; }
+        .back-btn { font-size: 22px; background: none; border: none; cursor: pointer; color: #1a1a1a; font-weight: 800; }
+        .page-title { font-size: 19px; font-weight: 800; color: #1a1a1a; }
+
+        .balance-badge { background: #ffffff; border: 1px solid #e2e8f0; padding: 16px; border-radius: 16px; font-size: 14px; font-weight: 700; color: #4a5568; display: flex; justify-content: space-between; align-items: center; box-shadow: 0 4px 12px rgba(0,0,0,0.02); margin-bottom: 20px; }
+        .balance-amount { color: #ff4757; font-size: 18px; font-weight: 800; }
+
+        /* Dynamic Mode Selection Tabs */
+        .tabs-container { display: flex; background: #edf2f7; padding: 4px; border-radius: 14px; margin-bottom: 20px; }
+        .tab-btn { flex: 1; padding: 12px; border: none; background: none; font-weight: 700; font-size: 14px; color: #718096; cursor: pointer; border-radius: 10px; transition: all 0.2s; }
+        .tab-btn.active { background: #ffffff; color: #ff4757; box-shadow: 0 4px 10px rgba(0,0,0,0.05); }
+
+        .form-box { background: #ffffff; border: 1px solid #e2e8f0; border-radius: 24px; padding: 24px; box-shadow: 0 10px 30px rgba(0,0,0,0.04); margin-bottom: 30px; }
+        .form-group { margin-bottom: 16px; display: flex; flex-direction: column; gap: 8px; text-align: left; }
+        .form-group label { font-size: 12px; font-weight: 800; color: #718096; text-transform: uppercase; }
+        .form-group input { width: 100%; padding: 14px; border: 2px solid #edf2f7; border-radius: 14px; font-size: 15px; font-weight: 600; color: #2d3748; outline: none; background: #f7fafc; }
+        .form-group input:focus { border-color: #ff4757; background: #ffffff; }
+
+        /* Instant Toggle Component */
+        .instant-toggle-box { display: flex; align-items: center; justify-content: space-between; background: #fff5f5; border: 1px solid #fed7d7; padding: 14px; border-radius: 14px; margin-bottom: 18px; }
+        .toggle-text { display: flex; flex-direction: column; gap: 2px; }
+        .toggle-text span:first-child { font-size: 13px; font-weight: 800; color: #e53e3e; }
+        .toggle-text span:last-child { font-size: 11px; color: #9b2c2c; font-weight: 600; }
+        
+        .switch { position: relative; display: inline-block; width: 46px; height: 26px; }
+        .switch input { opacity: 0; width: 0; height: 0; }
+        .slider { position: absolute; cursor: pointer; top: 0; left: 0; right: 0; bottom: 0; background-color: #cbd5e0; transition: .3s; border-radius: 34px; }
+        .slider:before { position: absolute; content: ""; height: 20px; width: 20px; left: 3px; bottom: 3px; background-color: white; transition: .3s; border-radius: 50%; }
+        input:checked + .slider { background-color: #e53e3e; }
+        input:checked + .slider:before { transform: translateX(20px); }
+
+        .btn-withdraw { width: 100%; padding: 16px; border: none; border-radius: 14px; font-size: 16px; font-weight: 700; color: white; cursor: pointer; background: linear-gradient(135deg, #ff4757, #ff6b81); box-shadow: 0 6px 20px rgba(255, 71, 87, 0.3); }
+
+        /* Logs List Box */
+        .section-title { font-size: 14px; font-weight: 800; color: #4a5568; margin-bottom: 12px; text-transform: uppercase; text-align: left; }
+        .w-list { display: flex; flex-direction: column; gap: 12px; }
+        .w-card { background: #ffffff; border: 1px solid #edf2f7; border-radius: 18px; padding: 14px 18px; display: flex; justify-content: space-between; align-items: center; cursor: pointer; transition: 0.2s; }
+        .w-card:hover { transform: translateY(-2px); box-shadow: 0 4px 12px rgba(0,0,0,0.03); }
+        
+        .w-info { text-align: left; display: flex; flex-direction: column; gap: 4px; }
+        .w-title { font-weight: 700; font-size: 14px; color: #1a202c; }
+        .w-time { font-size: 11px; color: #a0aec0; }
+        
+        .w-meta { text-align: right; display: flex; flex-direction: column; align-items: flex-end; gap: 6px; }
+        .w-badge { padding: 4px 8px; border-radius: 8px; font-size: 10px; font-weight: 800; text-transform: uppercase; color: white; }
+        .badge-pending { background: #ecc94b; color: #744210; }
+        .badge-approved { background: #48bb78; }
+        .badge-cancelled { background: #f56565; }
+        .badge-refunded { background: #4299e1; }
+        .w-amt { font-size: 15px; font-weight: 800; color: #2d3748; }
+        .instant-indicator { font-size: 9px; background: #fff5f5; border: 1px solid #feb2b2; color: #c53030; padding: 2px 5px; border-radius: 4px; font-weight: 800; margin-top: 2px; }
+
+        /* 🧾 Premium Sliding Detailed Box Overlay */
+        .detail-overlay { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.4); justify-content: center; align-items: center; z-index: 9999; padding: 20px; backdrop-filter: blur(4px); }
+        .detail-box { background: #ffffff; width: 100%; max-width: 380px; border-radius: 24px; padding: 28px 20px; text-align: center; box-shadow: 0 20px 40px rgba(0,0,0,0.1); border: 1px solid #edf2f7; animation: popUp 0.25s ease-out; }
+        @keyframes popUp { from { transform: scale(0.95); opacity: 0; } to { transform: scale(1); opacity: 1; } }
+        .detail-amt { font-size: 30px; font-weight: 800; color: #1a202c; margin: 10px 0 20px 0; }
+        .detail-row { display: flex; justify-content: space-between; margin-bottom: 12px; font-size: 13.5px; }
+        .detail-label { color: #718096; font-weight: 600; }
+        .detail-val { color: #1a202c; font-weight: 700; max-width: 60%; text-align: right; word-break: break-all; }
+        .btn-close-detail { width: 100%; margin-top: 20px; padding: 14px; border: none; background: #1a202c; color: white; font-weight: 700; border-radius: 12px; cursor: pointer; }
+    </style>
+</head>
+<body>
+
+    <div class="container">
+        <div class="back-header">
+            <button class="back-btn" onclick="window.location.href='dashboard.html'">←</button>
+            <div class="page-title">Withdraw Funds</div>
+        </div>
+
+        <div class="balance-badge">
+            <span>YOUR BALANCE</span>
+            <span class="balance-amount" id="user-bal-display">₹0.00</span>
+        </div>
+
+        <!-- Mode Selectors -->
+        <div class="tabs-container">
+            <button class="tab-btn active" id="tab-upi" onclick="switchMethod('UPI')">UPI Transfer</button>
+            <button class="tab-btn" id="tab-bank" onclick="switchMethod('BANK')">Bank Account</button>
+        </div>
+
+        <div class="form-box">
+            <!-- Dynamic Form Inputs -->
+            <div id="upi-layout-inputs">
+                <div class="form-group">
+                    <label>UPI ID (VPA)</label>
+                    <input type="text" id="input-upi-id" placeholder="example@paytm">
+                </div>
+            </div>
+
+            <div id="bank-layout-inputs" style="display: none;">
+                <div class="form-group">
+                    <label>Account Number</label>
+                    <input type="text" id="input-bank-acc" placeholder="98765432101">
+                </div>
+                <div class="form-group">
+                    <label>IFSC Code</label>
+                    <input type="text" id="input-bank-ifsc" placeholder="SBIN0001234">
+                </div>
+                <div class="form-group">
+                    <label>Account Holder Name</label>
+                    <input type="text" id="input-bank-name" placeholder="John Doe">
+                </div>
+            </div>
+
+            <div class="form-group">
+                <label>Amount to Withdraw</label>
+                <input type="number" id="input-withdraw-amount" placeholder="Minimum ₹100">
+            </div>
+
+            <!-- Instant Settlement Option Mode -->
+            <div class="instant-toggle-box" id="instant-container">
+                <div class="toggle-text">
+                    <span>⚡ Request Instant Settlement</span>
+                    <span>Admin prioritizes this on top dashboard alert</span>
+                </div>
+                <label class="switch">
+                    <input type="checkbox" id="instant-checkbox">
+                    <span class="slider"></span>
+                </label>
+            </div>
+
+            <button class="btn-withdraw" onclick="submitWithdrawalRequest()">SUBMIT REQUEST</button>
+        </div>
+
+        <!-- History UI -->
+        <div class="section-title">Withdrawal Log Sheets</div>
+        <div class="w-list" id="withdraw-logs-container">
+            <p style="text-align:center; color:#a0aec0; font-size:13px; font-weight:600;">Loading records...</p>
+        </div>
+    </div>
+
+    <!-- Detailed Single Card View Component Overlay -->
+    <div class="detail-overlay" id="detail-modal">
+        <div class="detail-box">
+            <h3 style="font-weight: 800; font-size: 15px; color:#718096; text-transform:uppercase;">Withdrawal Receipt</h3>
+            <div class="detail-amt" id="d-amt">₹0.00</div>
+            
+            <div class="detail-row"><span class="detail-label">Method</span><span class="detail-val" id="d-method">--</span></div>
+            <div class="detail-row"><span class="detail-label">Details</span><span class="detail-val" id="d-details">--</span></div>
+            <div class="detail-row"><span class="detail-label">Applied Date</span><span class="detail-val" id="d-date">--</span></div>
+            <div class="detail-row"><span class="detail-label">Status</span><span class="detail-val" id="d-status">--</span></div>
+            <div class="detail-row" id="row-speed"><span class="detail-label">Processed Speed</span><span class="detail-val" id="d-speed">--</span></div>
+            <div class="detail-row" id="row-utr"><span class="detail-label">Bank UTR Reference</span><span class="detail-val" id="d-utr" style="color:#2ed573;">--</span></div>
+            <div class="detail-row" id="row-reason"><span class="detail-label">Status Reason</span><span class="detail-val" id="d-reason" style="color:#ff4757;">--</span></div>
+
+            <button class="btn-close-detail" onclick="closeDetailModal()">CLOSE VIEW</button>
+        </div>
+    </div>
+
+    <!-- Firebase Hooks -->
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-auth-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-database-compat.js"></script>
+    <script>
+        const firebaseConfig = {
+            apiKey: "AIzaSyD2TYdbhZwLSQJEfV2tHOawK-XzKvOKlkQ",
+            authDomain: "h4xlifafa.firebaseapp.com",
+            databaseURL: "https://h4xlifafa-default-rtdb.firebaseio.com",
+            projectId: "h4xlifafa",
+            storageBucket: "h4xlifafa.firebasestorage.app",
+            messagingSenderId: "51114522531",
+            appId: "1:51114522531:web:face1332e055ed44690c16"
+        };
+        firebase.initializeApp(firebaseConfig);
+        const auth = firebase.auth();
+        const db = firebase.database();
+
+        let currentUid = null, walletBalance = 0, currentMethod = 'UPI';
+        let myPhone = "", myUsername = "";
+        
+        // Dynamic Limits linked to admin system data path
+        let minWithdrawLimit = 100;
+        let maxWithdrawLimit = 50000;
+
+        auth.onAuthStateChanged(user => {
+            if (user) {
+                currentUid = user.uid;
+                
+                // Fetch user data
+                db.ref('users/' + currentUid).on('value', snap => {
+                    const uData = snap.val();
+                    if(uData) {
+                        walletBalance = uData.wallet_balance || 0;
+                        myPhone = uData.phone || "";
+                        myUsername = uData.username || "";
+                        document.getElementById('user-bal-display').innerText = "₹" + walletBalance.toFixed(2);
+                    }
+                });
+
+                // Read live system limits injected by Admin Panel
+                db.ref('system_settings/withdrawal_config').on('value', snap => {
+                    const config = snap.val();
+                    if(config) {
+                        minWithdrawLimit = parseFloat(config.min_amount) || 100;
+                        maxWithdrawLimit = parseFloat(config.max_amount) || 50000;
+                        document.getElementById('input-withdraw-amount').placeholder = `Min ₹${minWithdrawLimit} - Max ₹${maxWithdrawLimit}`;
+                    }
+                });
+
+                renderUserWithdrawLogs();
+            } else {
+                window.location.href = "index.html";
+            }
+        });
+
+        function switchMethod(method) {
+            currentMethod = method;
+            document.getElementById('tab-upi').classList.toggle('active', method === 'UPI');
+            document.getElementById('tab-bank').classList.toggle('active', method === 'BANK');
+            document.getElementById('upi-layout-inputs').style.display = method === 'UPI' ? 'block' : 'none';
+            document.getElementById('bank-layout-inputs').style.display = method === 'BANK' ? 'block' : 'none';
+            document.getElementById('instant-container').style.display = method === 'UPI' ? 'flex' : 'none';
+        }
+
+        function submitWithdrawalRequest() {
+            const amt = parseFloat(document.getElementById('input-withdraw-amount').value);
+            
+            // Validation rules via Admin Inputs
+            if (isNaN(amt) || amt < minWithdrawLimit) return alert(`Minimum withdrawal amount limit is ₹${minWithdrawLimit}!`);
+            if (amt > maxWithdrawLimit) return alert(`Maximum withdrawal amount limit is ₹${maxWithdrawLimit}!`);
+            if (amt > walletBalance) return alert("Insufficient account core balance!");
+
+            let metaDetails = "";
+            if (currentMethod === 'UPI') {
+                const upi = document.getElementById('input-upi-id').value.trim();
+                if (!upi) return alert("Please specify target UPI VPA Address.");
+                metaDetails = upi;
+            } else {
+                const acc = document.getElementById('input-bank-acc').value.trim();
+                const ifsc = document.getElementById('input-bank-ifsc').value.trim();
+                const name = document.getElementById('input-bank-name').value.trim();
+                if (!acc || !ifsc || !name) return alert("Fill all standard Bank fields!");
+                metaDetails = `Acc: ${acc} | IFSC: ${ifsc} | Name: ${name}`;
+            }
+
+            const isInstant = currentMethod === 'UPI' && document.getElementById('instant-checkbox').checked;
+
+            const newReqRef = db.ref('withdrawals').push();
+            const currentTimestamp = Date.now();
+
+            const requestData = {
+                req_id: newReqRef.key,
+                uid: currentUid,
+                username: myUsername,
+                phone: myPhone,
+                amount: amt,
+                method: currentMethod,
+                details: metaDetails,
+                priority: isInstant ? "instant" : "normal",
+                status: "pending", 
+                timestamp: currentTimestamp,
+                processed_time: 0,
+                utr: "",
+                reason: ""
+            };
+
+            // Deduct instantly from user balance
+            db.ref('users/' + currentUid + '/wallet_balance').set(walletBalance - amt).then(() => {
+                newReqRef.set(requestData).then(() => {
+                    alert("Withdrawal requested successfully locked under PENDING queue.");
+
+                    document.getElementById('input-withdraw-amount').value = "";
+                    document.getElementById('input-upi-id').value = "";
+                    document.getElementById('input-bank-acc').value = "";
+                    document.getElementById('input-bank-ifsc').value = "";
+                    document.getElementById('input-bank-name').value = "";
+                    document.getElementById('instant-checkbox').checked = false;
+                });
+            });
+        }
+
+        function renderUserWithdrawLogs() {
+            db.ref('withdrawals').orderByChild('uid').equalTo(currentUid).on('value', snap => {
+                const container = document.getElementById('withdraw-logs-container');
+                container.innerHTML = "";
+                const data = snap.val();
+
+                if(!data) {
+                    container.innerHTML = `<p style="text-align:center; color:#a0aec0; font-size:13px; font-weight:600;">No actions recorded.</p>`;
+                    return;
+                }
+
+                const sorted = Object.values(data).sort((a,b) => b.timestamp - a.timestamp);
+                sorted.forEach(w => {
+                    const card = document.createElement('div');
+                    card.className = "w-card";
+                    const dt = new Date(w.timestamp).toLocaleString();
+                    
+                    card.innerHTML = `
+                        <div class="w-info">
+                            <div class="w-title">${w.method} Settlement ${w.priority === 'instant' ? '<span class="instant-indicator">INSTANT</span>' : ''}</div>
+                            <div class="w-time">${dt}</div>
+                        </div>
+                        <div class="w-meta">
+                            <span class="w-badge badge-${w.status}">${w.status}</span>
+                            <span class="w-amt">₹${w.amount.toFixed(2)}</span>
+                        </div>
+                    `;
+
+                    card.addEventListener('click', () => {
+                        document.getElementById('d-amt').innerText = "₹" + w.amount.toFixed(2);
+                        document.getElementById('d-method').innerText = w.method + ` (${w.priority.toUpperCase()})`;
+                        document.getElementById('d-details').innerText = w.details;
+                        document.getElementById('d-date').innerText = dt;
+                        document.getElementById('d-status').innerText = w.status.toUpperCase();
+                        
+                        if(w.processed_time && w.processed_time > w.timestamp) {
+                            document.getElementById('row-speed').style.display = "flex";
+                            const diffSec = Math.floor((w.processed_time - w.timestamp) / 1000);
+                            if(diffSec < 60) {
+                                document.getElementById('d-speed').innerText = `${diffSec} Seconds`;
+                            } else if (diffSec < 3600) {
+                                document.getElementById('d-speed').innerText = `${Math.floor(diffSec/60)} Minutes`;
+                            } else {
+                                document.getElementById('d-speed').innerText = `${Math.floor(diffSec/3600)} Hours`;
+                            }
+                        } else {
+                            document.getElementById('row-speed').style.display = "none";
+                        }
+
+                        if(w.status === 'approved' && w.utr) {
+                            document.getElementById('row-utr').style.display = "flex";
+                            document.getElementById('d-utr').innerText = w.utr;
+                        } else {
+                            document.getElementById('row-utr').style.display = "none";
+                        }
+
+                        if((w.status === 'cancelled' || w.status === 'refunded') && w.reason) {
+                            document.getElementById('row-reason').style.display = "flex";
+                            document.getElementById('d-reason').innerText = w.reason;
+                        } else {
+                            document.getElementById('row-reason').style.display = "none";
+                        }
+
+                        document.getElementById('detail-modal').style.display = "flex";
+                    });
+
+                    container.appendChild(card);
+                });
+            });
+        }
+
+        function closeDetailModal() { document.getElementById('detail-modal').style.display = "none"; }
+    </script>
+</body>
+</html>

@@ -1,0 +1,500 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>H4X Premium - Decentralized Color Engine</title>
+    <style>
+        :root {
+            --bg-main: #ffffff;
+            --card-border: #e2e8f0;
+            --red: #ff4757;
+            --green: #2ed573;
+            --dark: #0f172a;
+            --sub: #64748b;
+        }
+        * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Segoe UI', sans-serif; }
+        body { background: #f1f5f9; color: var(--dark); padding: 15px; display: flex; flex-direction: column; align-items: center; min-height: 100vh; }
+        
+        .game-container { width: 100%; max-width: 480px; background: white; border-radius: 24px; padding: 20px; box-shadow: 0 10px 30px rgba(0,0,0,0.05); position: relative; margin-bottom: 20px; }
+        .header-strip { display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px; border-bottom: 1px solid #f0f0f0; padding-bottom: 10px; }
+        .period-info h3, .timer-box h3 { font-size: 11px; color: var(--sub); letter-spacing: 0.5px; text-transform: uppercase; }
+        .period-info h2 { font-size: 17px; font-weight: 800; color: var(--dark); }
+        .timer-box h1 { font-size: 24px; font-weight: 800; color: var(--red); font-family: monospace; }
+        
+        .wallet-bar { background: linear-gradient(135deg, #0f172a, #1e293b); color: white; padding: 15px; border-radius: 16px; display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; }
+        .wallet-bar h2 { font-size: 22px; font-weight: 700; color: var(--green); }
+
+        .chart-box { background: #fafafa; border: 2px dashed #cbd5e1; border-radius: 16px; padding: 12px; margin-bottom: 20px; display: grid; grid-template-rows: repeat(4, 1fr); gap: 6px; min-height: 120px; direction: rtl; }
+        .chart-row { display: flex; gap: 6px; justify-content: flex-start; flex-direction: row-reverse; }
+        .matrix-dot { width: 24px; height: 24px; border-radius: 6px; display: flex; align-items: center; justify-content: center; font-size: 12px; font-weight: 900; color: white; }
+        .dot-R { background: var(--red); box-shadow: 0 0 6px rgba(255,71,87,0.4); }
+        .dot-G { background: var(--green); box-shadow: 0 0 6px rgba(46,213,115,0.4); }
+
+        .bet-desk { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; margin-bottom: 25px; }
+        .bet-btn { border: none; padding: 18px; border-radius: 16px; color: white; font-size: 16px; font-weight: 800; cursor: pointer; transition: transform 0.2s; text-transform: uppercase; }
+        .btn-red { background: linear-gradient(135deg, #ff4757, #ff6b81); box-shadow: 0 5px 15px rgba(255,71,87,0.3); }
+        .btn-green { background: linear-gradient(135deg, #2ed573, #7bed9f); box-shadow: 0 5px 15px rgba(46,213,115,0.3); }
+        
+        .logs-title { font-size: 13px; font-weight: 800; margin-bottom: 10px; text-transform: uppercase; color: var(--dark); letter-spacing: 0.5px; }
+        .logs-container { max-height: 220px; overflow-y: auto; display: flex; flex-direction: column; gap: 8px; }
+        
+        /* Interactive Row Style */
+        .log-row { display: flex; justify-content: space-between; background: #f8fafc; border: 1px solid var(--card-border); padding: 12px; border-radius: 12px; font-size: 13px; font-weight: 600; cursor: pointer; transition: background 0.2s; }
+        .log-row:hover { background: #f1f5f9; }
+        .log-res { width: 20px; height: 20px; border-radius: 4px; display: inline-flex; align-items: center; justify-content: center; color: white; font-weight: 800; }
+
+        /* Floating Overlays Layout Box */
+        .floating-overlay { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); z-index: 2000; align-items: center; justify-content: center; padding: 20px; }
+        .floating-overlay.active { display: flex; }
+        .floating-box { background: white; border-radius: 20px; width: 100%; max-width: 380px; padding: 24px; box-shadow: 0 20px 40px rgba(0,0,0,0.2); position: relative; }
+        .close-x { position: absolute; top: 15px; right: 20px; font-size: 22px; cursor: pointer; color: var(--sub); font-weight: bold; }
+        
+        .floating-box input { width: 100%; padding: 12px; margin: 15px 0; border: 2px solid var(--card-border); border-radius: 10px; font-size: 18px; font-weight: 700; text-align: center; }
+        
+        /* Detail Elements in Pop-up Grid */
+        .detail-item { display: flex; justify-content: space-between; border-bottom: 1px dashed #e2e8f0; padding: 10px 0; font-size: 14px; font-weight: 600; }
+        .detail-item:last-child { border-bottom: none; }
+        .detail-item span:first-child { color: var(--sub); }
+
+        /* Disclaimer Guard */
+        .legal-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(15, 23, 42, 0.96); z-index: 9999; display: flex; align-items: center; justify-content: center; padding: 20px; }
+        .legal-box { background: white; border-radius: 20px; padding: 30px; max-width: 400px; text-align: center; }
+        .legal-box h2 { color: var(--red); margin-bottom: 12px; font-weight: 800; }
+        .legal-box p { font-size: 13.5px; color: var(--sub); line-height: 1.6; margin-bottom: 20px; text-align: justify; }
+        .primary-btn { background: var(--dark); color: white; border: none; padding: 14px; font-weight: 700; border-radius: 12px; cursor: pointer; width: 100%; }
+
+        /* Admin Frame Desk Component */
+        .admin-desk { width: 100%; max-width: 480px; background: #0f172a; color: white; border-radius: 24px; padding: 20px; box-shadow: 0 10px 30px rgba(0,0,0,0.2); margin-top: 10px; display: none; }
+        .admin-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-top: 15px; }
+        .pool-card { background: #1e293b; padding: 12px; border-radius: 12px; text-align: center; border: 1px solid #334155; }
+        .pool-card h4 { font-size: 11px; opacity: 0.7; text-transform: uppercase; }
+        .pool-card h2 { font-size: 20px; font-weight: 800; margin-top: 4px; }
+        .force-panel { display: flex; gap: 10px; margin-top: 15px; }
+        .force-btn { flex: 1; padding: 12px; border: none; border-radius: 10px; font-weight: 800; cursor: pointer; color: white; }
+    </style>
+</head>
+<body>
+
+<!-- Legal Shield Overlay -->
+<div class="legal-overlay" id="legalShield">
+    <div class="legal-box">
+        <h2>⚠️ LEGAL DISCLAIMER & 18+ NOTICE</h2>
+        <p>This platform offers an analytical trade forecasting matrix interface intended exclusively for adult users aged <strong>18 years or older</strong>. By interacting with this page, you confirm full legal compliance with local laws. The operator bears no responsibility for direct financial risk, capital exposure, or software discrepancies. Use at your own self-accountability.</p>
+        <button class="primary-btn" onclick="verifyAgeTerms()">UNDERSTOOD & AGREE</button>
+    </div>
+</div>
+
+<!-- Main Game View -->
+<div class="game-container" id="gameBodyArea">
+    <div class="header-strip">
+        <div class="period-info">
+            <h3>PERIOD INDEX</h3>
+            <h2 id="periodDisplay">Calculating...</h2>
+        </div>
+        <div class="timer-box">
+            <h3>COUNTDOWN</h3>
+            <h1 id="timerDisplay">00:00</h1>
+        </div>
+    </div>
+
+    <div class="wallet-bar">
+        <span>WALLET ACCOUNT BALANCE</span>
+        <h2 id="balanceDisplay">₹0.00</h2>
+    </div>
+
+    <div class="logs-title">📈 Dynamic Trend Pattern Matrix (4 Lines)</div>
+    <div class="chart-box" id="matrixChartBox">
+        <div class="chart-row" id="row-0"></div>
+        <div class="chart-row" id="row-1"></div>
+        <div class="chart-row" id="row-2"></div>
+        <div class="chart-row" id="row-3"></div>
+    </div>
+
+    <div class="logs-title">🎮 Predict Nex Result Outcome</div>
+    <div class="bet-desk">
+        <button class="bet-btn btn-red" onclick="openBetPopup('Red')">Predict Red</button>
+        <button class="bet-btn btn-green" onclick="openBetPopup('Green')">Predict Green</button>
+    </div>
+
+    <div class="logs-title">📋 Personal Settlement Ledger Transactions (Click rows for receipt)</div>
+    <div class="logs-container" id="personalLogsWrapper"></div>
+
+    <!-- Win/Loss Flash Dynamic Modal Overlay Frame -->
+    <div class="floating-overlay" id="animationOverlay" style="background: rgba(255,255,255,0.95);">
+        <div id="popBoxContent" style="text-align:center;"></div>
+    </div>
+</div>
+
+<!-- Floating Custom Bet Amount Pop-up Box Desk -->
+<div class="floating-overlay" id="betPopupModal">
+    <div class="floating-box">
+        <span class="close-x" onclick="closeBetPopup()">&times;</span>
+        <h2 id="betPopupTitle" style="margin-bottom: 5px; text-align: center;">Invest on Color</h2>
+        <p style="color: var(--sub); font-size: 13px; text-align: center;">Payout Ratio Multiplier: 1.92x profit</p>
+        <input type="number" id="customBetAmountInput" value="10" min="1" placeholder="Enter Bet Amount (₹)">
+        <button class="primary-btn" id="confirmBetBtnSubmit">Confirm Investment Bet</button>
+    </div>
+</div>
+
+<!-- NEW: Floating Transaction Detailed Statement Receipt Pop-up Box -->
+<div class="floating-overlay" id="txDetailPopupModal">
+    <div class="floating-box">
+        <span class="close-x" onclick="closeTxDetailPopup()">&times;</span>
+        <h2 style="margin-bottom: 15px; text-align: center; font-size: 18px; font-weight: 800;">📄 TRANSACTION RECEIPT</h2>
+        
+        <div class="detail-item"><span>Period Reference:</span><span id="popTxPeriod" style="color:var(--dark);">--</span></div>
+        <div class="detail-item"><span>Date Stamp:</span><span id="popTxDate">--</span></div>
+        <div class="detail-item"><span>Time Stamp:</span><span id="popTxTime">--</span></div>
+        <div class="detail-item"><span>Your Prediction:</span><span id="popTxYourBet" style="font-weight: 800;">--</span></div>
+        <div class="detail-item"><span>Actual Outcome:</span><span id="popTxActualOutcome" style="font-weight: 800;">--</span></div>
+        <div class="detail-item"><span>Invested Capital:</span><span id="popTxAmount" style="color:var(--dark);">₹0.00</span></div>
+        <div class="detail-item"><span>Settlement Status:</span><span id="popTxStatus" style="font-weight: 900; text-transform: uppercase;">--</span></div>
+    </div>
+</div>
+
+<!-- Embedded Live Admin Dashboard Desk Grid View Component -->
+<div class="admin-desk" id="adminControlDashboard">
+    <h3 style="border-bottom:1px dashed #334155; padding-bottom:8px; font-size:15px;">👑 H4X REAL-TIME HOUSE CONTROL DESK</h3>
+    <div class="admin-grid">
+        <div class="pool-card" style="border-left: 4px solid var(--red);">
+            <h4>Red Stakes Pool</h4>
+            <h2 id="adminRedPool">₹0.00</h2>
+        </div>
+        <div class="pool-card" style="border-left: 4px solid var(--green);">
+            <h4>Green Stakes Pool</h4>
+            <h2 id="adminGreenPool">₹0.00</h2>
+        </div>
+    </div>
+    <p style="font-size: 11px; margin-top:12px; opacity:0.6; text-align:center;">Force Mode Next Period Result Selection Control Override Selector:</p>
+    <div class="force-panel">
+        <button class="force-btn" style="background: var(--red);" onclick="forceNextPeriodResult('R')">Force RED Outcome</button>
+        <button class="force-btn" style="background: var(--green);" onclick="forceNextPeriodResult('G')">Force GREEN Outcome</button>
+    </div>
+    <p id="adminStatusNotify" style="font-size:12px; color:orange; margin-top:10px; text-align:center; font-weight:bold;"></p>
+</div>
+
+<script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
+    import { getDatabase, ref, onValue, set, get, update } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-database.js";
+    import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
+
+    const firebaseConfig = {
+        apiKey: "AIzaSyD2TYdbhZwLSQJEfV2tHOawK-XzKvOKlkQ",
+        authDomain: "h4xlifafa.firebaseapp.com",
+        databaseURL: "https://h4xlifafa-default-rtdb.firebaseio.com",
+        projectId: "h4xlifafa",
+        storageBucket: "h4xlifafa.firebasestorage.app",
+        messagingSenderId: "51114522531",
+        appId: "1:51114522531:web:face1332e055ed44690c16"
+    };
+
+    const app = initializeApp(firebaseConfig);
+    const db = getDatabase(app);
+    const auth = getAuth(app);
+
+    let uid = "";
+    let walletBalance = 0;
+    let targetActiveColor = "";
+    let currentPeriodGlobal = "";
+    let localSettledPeriodsMap = new Set();
+    let localGlobalHistoryCache = {}; // Used to store periods actual results locally
+
+    window.verifyAgeTerms = () => {
+        localStorage.setItem("h4x_18plus_guard", "verified");
+        document.getElementById("legalShield").style.display = "none";
+    };
+    if(localStorage.getItem("h4x_18plus_guard") === "verified") {
+        document.getElementById("legalShield").style.display = "none";
+    }
+
+    onAuthStateChanged(auth, (user) => {
+        if(user) {
+            uid = user.uid;
+            checkAdminSecretAccessBypass();
+            bindRealtimeListeners();
+            startDecentralizedGameEngineLoop();
+        } else {
+            window.location.href = "index.html";
+        }
+    });
+
+    function checkAdminSecretAccessBypass() {
+        if(window.location.search.includes("role=h4xadmin")) {
+            document.getElementById("adminControlDashboard").style.display = "block";
+        }
+    }
+
+    function bindRealtimeListeners() {
+        onValue(ref(db, `users/${uid}`), (snap) => {
+            if(snap.exists()) {
+                walletBalance = parseFloat(snap.val().wallet_balance || 0);
+                document.getElementById("balanceDisplay").innerText = "₹" + walletBalance.toFixed(2);
+            }
+        });
+
+        onValue(ref(db, "game_history"), (snap) => {
+            if(snap.exists()) {
+                let items = [];
+                localGlobalHistoryCache = {};
+                snap.forEach(c => { 
+                    items.push(c.val()); 
+                    localGlobalHistoryCache[c.key] = c.val().result; // Save outcome mappings
+                });
+                items.sort((a,b) => b.time - a.time);
+                renderMatrixTrendPanel(items);
+                processClientSideWalletSettlements(items);
+            }
+        });
+    }
+
+    function startDecentralizedGameEngineLoop() {
+        setInterval(async () => {
+            const timeNow = Date.now();
+            const benchmarkBase = new Date(2026, 0, 1, 0, 0, 0, 0).getTime(); 
+            const deltaMs = timeNow - benchmarkBase;
+            
+            const totalMinutesElapsed = Math.floor(deltaMs / 60000);
+            const remainderSeconds = 60 - Math.floor((deltaMs % 60000) / 1000);
+            
+            const dObj = new Date(timeNow);
+            const padM = String(dObj.getMonth()+1).padStart(2,'0');
+            const padD = String(dObj.getDate()).padStart(2,'0');
+            const periodStringId = `2026${padM}${padD}${String(totalMinutesElapsed % 10000).padStart(4,'0')}`;
+            
+            currentPeriodGlobal = periodStringId;
+            document.getElementById("periodDisplay").innerText = periodStringId;
+            document.getElementById("timerDisplay").innerText = `00:${remainderSeconds < 10 ? '0' : ''}${remainderSeconds}`;
+
+            if(document.getElementById("adminControlDashboard").style.display === "block") {
+                syncAdminLiveStakesMonitor(periodStringId);
+            }
+
+            if(remainderSeconds === 60) {
+                document.getElementById("animationOverlay").classList.remove("active");
+                executeServerlessPeriodResolverAlgo(periodStringId - 1);
+            }
+        }, 1000);
+    }
+
+    async function executeServerlessPeriodResolverAlgo(endedPeriodId) {
+        const historyNodeRef = ref(db, `game_history/${endedPeriodId}`);
+        const historySnap = await get(historyNodeRef);
+        if(historySnap.exists()) return; 
+
+        const stakesSnap = await get(ref(db, `global_period_bets/${endedPeriodId}`));
+        const adminForceSnap = await get(ref(db, `admin_override_node/${endedPeriodId}`));
+        
+        let targetOutcome = "";
+
+        if(adminForceSnap.exists() && adminForceSnap.val().forced_result !== "none") {
+            targetOutcome = adminForceSnap.val().forced_result;
+        } else {
+            let redPool = 0, greenPool = 0;
+            if(stakesSnap.exists()) {
+                redPool = parseFloat(stakesSnap.val().Red?.total_money || 0);
+                greenPool = parseFloat(stakesSnap.val().Green?.total_money || 0);
+            }
+
+            if(redPool > 0 || greenPool > 0) {
+                if(redPool > greenPool) targetOutcome = "G";
+                else if(greenPool > redPool) targetOutcome = "R";
+                else targetOutcome = Math.random() < 0.5 ? "R" : "G";
+            } else {
+                targetOutcome = Math.random() < 0.6 ? "R" : "G";
+            }
+        }
+
+        await set(historyNodeRef, {
+            period: endedPeriodId,
+            result: targetOutcome,
+            time: Date.now()
+        });
+    }
+
+    function renderMatrixTrendPanel(historyItems) {
+        for(let i=0; i<4; i++) document.getElementById(`row-${i}`).innerHTML = "";
+        let reversed = [...historyItems].reverse();
+        reversed.forEach((item, index) => {
+            let targetRowIndex = index % 4;
+            let dot = document.createElement("div");
+            dot.className = `matrix-dot dot-${item.result}`;
+            dot.innerText = item.result;
+            document.getElementById(`row-${targetRowIndex}`).appendChild(dot);
+        });
+    }
+
+    async function processClientSideWalletSettlements(historyItems) {
+        if(historyItems.length === 0) return;
+        let lastItem = historyItems[0];
+        let pId = lastItem.period;
+
+        if(localSettledPeriodsMap.has(pId)) return;
+
+        const personalBetRef = ref(db, `user_bets/${uid}/${pId}`);
+        const personalBetSnap = await get(personalBetRef);
+
+        if(personalBetSnap.exists() && personalBetSnap.val().status === "pending") {
+            localSettledPeriodsMap.add(pId);
+            let data = personalBetSnap.val();
+            let actualColor = lastItem.result === "R" ? "Red" : "Green";
+            let animHtml = "";
+
+            if(data.bet_on === actualColor) {
+                let gain = parseFloat(data.amount) * 1.92;
+                const balanceSecureFetch = await get(ref(db, `users/${uid}`));
+                let currentWalletAmount = parseFloat(balanceSecureFetch.val().wallet_balance || 0);
+                
+                await update(ref(db, `users/${uid}`), { wallet_balance: currentWalletAmount + gain });
+                await update(personalBetRef, { status: "won", payout: gain });
+
+                animHtml = `<h1 style="color:var(--green); font-size:36px; font-weight:900;">🎉 MATCH WINNER!</h1><p style="font-size:18px; margin-top:5px; font-weight:bold;">Credits: +₹${gain.toFixed(2)}</p>`;
+            } else {
+                await update(personalBetRef, { status: "lost", payout: 0 });
+                animHtml = `<h1 style="color:var(--red); font-size:36px; font-weight:900;">💥 LOSS INSIGHT</h1><p style="color:var(--sub); margin-top:5px;">Period Index: ${pId}</p>`;
+            }
+
+            document.getElementById("popBoxContent").innerHTML = animHtml;
+            document.getElementById("animationOverlay").classList.add("active");
+            setTimeout(() => document.getElementById("animationOverlay").classList.remove("active"), 4500);
+        }
+        renderPersonalLogsViewLedger();
+    }
+
+    async function renderPersonalLogsViewLedger() {
+        const snap = await get(ref(db, `user_bets/${uid}`));
+        let html = "";
+        if(snap.exists()) {
+            let logs = [];
+            snap.forEach(c => { logs.push({ pId: c.key, ...c.val() }); });
+            logs.reverse().forEach(l => {
+                let colorClass = l.status === "won" ? "var(--green)" : l.status === "lost" ? "var(--red)" : "orange";
+                
+                // Escape data parameters for secure HTML inline string functions triggers
+                let clickActionString = `openTxDetailPopup('${l.pId}', '${l.time}', '${l.bet_on}', '${l.amount}', '${l.status}')`;
+                
+                html += `
+                <div class="log-row" onclick="${clickActionString}">
+                    <div><span class="log-res dot-${l.bet_on==='Red'?'R':'G'}">${l.bet_on==='Red'?'R':'G'}</span> <span style="margin-left:5px;">Staked: ₹${l.amount}</span></div>
+                    <div style="text-align:right;"><span style="color:${colorClass}; font-weight:800; text-transform:uppercase;">${l.status}</span><div style="font-size:10px; color:var(--sub);">Period: ${l.pId}</div></div>
+                </div>`;
+            });
+        }
+        document.getElementById("personalLogsWrapper").innerHTML = html || "<p style='color:var(--sub); text-align:center;'>No stakes placed.</p>";
+    }
+
+    // Modal Floating Custom Amount Dialog Box
+    window.openBetPopup = (color) => {
+        targetActiveColor = color;
+        document.getElementById("betPopupTitle").innerText = `Predict Option: ${color}`;
+        document.getElementById("betPopupTitle").style.color = color === "Red" ? "var(--red)" : "var(--green)";
+        document.getElementById("betPopupModal").classList.add("active");
+    };
+
+    window.closeBetPopup = () => {
+        document.getElementById("betPopupModal").classList.remove("active");
+    };
+
+    // NEW: Open Detailed Statement Receipt Modal Handler with formatting parameters
+    window.openTxDetailPopup = (periodId, timestamp, betOn, amount, status) => {
+        const dateObj = new Date(parseInt(timestamp));
+        
+        // Date formatting: DD/MM/YYYY
+        const dateString = `${String(dateObj.getDate()).padStart(2,'0')}/${String(dateObj.getMonth()+1).padStart(2,'0')}/${dateObj.getFullYear()}`;
+        
+        // Time formatting: HH:MM AM/PM
+        let hours = dateObj.getHours();
+        const minutes = String(dateObj.getMinutes()).padStart(2, '0');
+        const ampm = hours >= 12 ? 'PM' : 'AM';
+        hours = hours % 12;
+        hours = hours ? hours : 12; // hours '0' should be mapped to '12'
+        const timeString = `${String(hours).padStart(2, '0')}:${minutes} ${ampm}`;
+
+        // Read actual target color outcome resolved inside our local matrix engine cache
+        let outcomeChar = localGlobalHistoryCache[periodId] || "Pending";
+        let actualOutcomeText = "Waiting Calculation...";
+        if(outcomeChar === "R") actualOutcomeText = "🔴 RED";
+        if(outcomeChar === "G") actualOutcomeText = "🟢 GREEN";
+
+        // Inject parameters dynamically inside DOM layout elements
+        document.getElementById("popTxPeriod").innerText = periodId;
+        document.getElementById("popTxDate").innerText = dateString;
+        document.getElementById("popTxTime").innerText = timeString;
+        document.getElementById("popTxYourBet").innerText = betOn === 'Red' ? '🔴 RED' : '🟢 GREEN';
+        document.getElementById("popTxYourBet").style.color = betOn === 'Red' ? 'var(--red)' : 'var(--green)';
+        document.getElementById("popTxActualOutcome").innerText = actualOutcomeText;
+        document.getElementById("popTxActualOutcome").style.color = outcomeChar === 'R' ? 'var(--red)' : outcomeChar === 'G' ? 'var(--green)' : 'orange';
+        document.getElementById("popTxAmount").innerText = "₹" + parseFloat(amount).toFixed(2);
+        
+        let statusElement = document.getElementById("popTxStatus");
+        statusElement.innerText = status;
+        statusElement.style.color = status === 'won' ? 'var(--green)' : status === 'lost' ? 'var(--red)' : 'orange';
+
+        document.getElementById("txDetailPopupModal").classList.add("active");
+    };
+
+    window.closeTxDetailPopup = () => {
+        document.getElementById("txDetailPopupModal").classList.remove("active");
+    };
+
+    document.getElementById("confirmBetBtnSubmit").onclick = async () => {
+        let betAmountValue = parseFloat(document.getElementById("customBetAmountInput").value);
+        if(!betAmountValue || betAmountValue <= 0) return alert("Enter valid positive asset transaction amount.");
+        
+        let tCheck = document.getElementById("timerDisplay").innerText.split(":")[1];
+        if(parseInt(tCheck) <= 4 && parseInt(tCheck) > 0) return alert("Period locked for processing calculations matrix. Wait.");
+
+        const verifyProfileNode = await get(ref(db, `users/${uid}`));
+        let rootBalance = parseFloat(verifyProfileNode.val().wallet_balance || 0);
+
+        if(rootBalance < betAmountValue) return alert("Insufficient Profile Funds Wallet Error.");
+
+        const targetBetRefPath = ref(db, `user_bets/${uid}/${currentPeriodGlobal}`);
+        const duplicateCheckSnap = await get(targetBetRefPath);
+        if(duplicateCheckSnap.exists()) return alert("Multiple predictions on identical indices prohibited.");
+
+        await update(ref(db, `users/${uid}`), { wallet_balance: rootBalance - betAmountValue });
+
+        await set(targetBetRefPath, {
+            bet_on: targetActiveColor,
+            amount: betAmountValue,
+            status: "pending",
+            time: Date.now()
+        });
+
+        let globalAggregatorPath = ref(db, `global_period_bets/${currentPeriodGlobal}/${targetActiveColor}`);
+        let currentPoolSnap = await get(globalAggregatorPath);
+        let absolutePreviousTotal = currentPoolSnap.exists() ? parseFloat(currentPoolSnap.val().total_money || 0) : 0;
+        
+        await set(globalAggregatorPath, {
+            total_money: absolutePreviousTotal + betAmountValue
+        });
+
+        closeBetPopup();
+        alert(`Prediction logged successfully on ${targetActiveColor}!`);
+        renderPersonalLogsViewLedger();
+    };
+
+    async function syncAdminLiveStakesMonitor(activePeriodId) {
+        const statsSnap = await get(ref(db, `global_period_bets/${activePeriodId}`));
+        if(statsSnap.exists()) {
+            let data = statsSnap.val();
+            document.getElementById("adminRedPool").innerText = "₹" + parseFloat(data.Red?.total_money || 0).toFixed(2);
+            document.getElementById("adminGreenPool").innerText = "₹" + parseFloat(data.Green?.total_money || 0).toFixed(2);
+        } else {
+            document.getElementById("adminRedPool").innerText = "₹0.00";
+            document.getElementById("adminGreenPool").innerText = "₹0.00";
+        }
+    }
+
+    window.forceNextPeriodResult = async (forcedChar) => {
+        if(!currentPeriodGlobal) return;
+        await set(ref(db, `admin_override_node/${currentPeriodGlobal}`), {
+            forced_result: forcedChar
+        });
+        document.getElementById("adminStatusNotify").innerText = `⚙️ SYSTEM ACTION LOCKED: Next Period Result Forced to [${forcedChar}]`;
+        setTimeout(() => { document.getElementById("adminStatusNotify").innerText = ""; }, 4000);
+    };
+</script>
+</body>
+</html>
