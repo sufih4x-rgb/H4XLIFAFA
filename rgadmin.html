@@ -1,0 +1,309 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>H4X - Realtime Dynamic Admin Desk</title>
+    <style>
+        :root {
+            --bg-dark: #0f172a;
+            --bg-card: #1e293b;
+            --border-color: #334155;
+            --text-light: #f8fafc;
+            --text-muted: #94a3b8;
+            --red: #ff4757;
+            --green: #2ed573;
+            --orange: #f39c12;
+            --blue: #38bdf8;
+        }
+        * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Segoe UI', sans-serif; }
+        body { background: var(--bg-dark); color: var(--text-light); padding: 20px; min-height: 100vh; }
+        
+        .admin-wrapper { width: 100%; max-width: 1100px; margin: 0 auto; }
+        header { display: flex; justify-content: space-between; align-items: center; border-bottom: 2px dashed var(--border-color); padding-bottom: 15px; margin-bottom: 25px; }
+        header h1 { font-size: 24px; font-weight: 800; letter-spacing: 0.5px; color: var(--text-light); }
+        
+        .timer-badge { background: rgba(255, 71, 87, 0.15); border: 1px solid var(--red); color: var(--red); padding: 8px 16px; border-radius: 12px; font-size: 18px; font-weight: 800; font-family: monospace; }
+        
+        .top-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 20px; margin-bottom: 25px; }
+        .card { background: var(--bg-card); border: 1px solid var(--border-color); border-radius: 16px; padding: 20px; box-shadow: 0 10px 25px rgba(0,0,0,0.3); }
+        .card h3 { font-size: 12px; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 8px; }
+        .card h2 { font-size: 28px; font-weight: 800; }
+        
+        .config-inputs { display: flex; flex-direction: column; gap: 12px; margin-top: 10px; }
+        .input-group { display: flex; flex-direction: column; gap: 5px; }
+        .input-group label { font-size: 11px; color: var(--text-muted); font-weight: 600; }
+        .input-group input { background: var(--bg-dark); border: 1px solid var(--border-color); padding: 10px; border-radius: 8px; color: white; font-size: 16px; font-weight: 700; }
+        
+        .btn-action { background: var(--text-light); color: var(--bg-dark); border: none; padding: 12px; font-weight: 700; border-radius: 8px; cursor: pointer; width: 100%; text-transform: uppercase; margin-top: 5px; }
+        
+        .force-panel { display: flex; flex-direction: column; gap: 10px; margin-top: 15px; }
+        .btn-row { display: flex; gap: 10px; }
+        .force-btn { flex: 1; padding: 12px; border: none; border-radius: 10px; font-weight: 800; cursor: pointer; color: white; text-transform: uppercase; font-size: 12px; }
+        .f-red { background: linear-gradient(135deg, #ff4757, #ff6b81); box-shadow: 0 4px 15px rgba(255,71,87,0.3); }
+        .f-green { background: linear-gradient(135deg, #2ed573, #7bed9f); box-shadow: 0 4px 15px rgba(46,213,115,0.3); }
+        .f-reset { background: linear-gradient(135deg, #38bdf8, #0ea5e9); box-shadow: 0 4px 15px rgba(56,189,248,0.3); width: 100%; margin-top: 5px; }
+        
+        #statusLogger { font-size: 12px; color: var(--text-light); margin-top: 12px; text-align: center; font-weight: 700; min-height: 20px; background: rgba(255,255,255,0.05); padding: 6px; border-radius: 6px; }
+
+        .table-section { background: var(--bg-card); border: 1px solid var(--border-color); border-radius: 16px; padding: 20px; margin-top: 25px; box-shadow: 0 10px 25px rgba(0,0,0,0.3); }
+        .table-section h3 { font-size: 15px; font-weight: 800; text-transform: uppercase; letter-spacing: 0.5px; border-bottom: 1px solid var(--border-color); padding-bottom: 10px; margin-bottom: 15px; display: flex; justify-content: space-between; align-items: center; }
+        
+        .table-responsive { width: 100%; overflow-x: auto; max-height: 400px; overflow-y: auto; }
+        table { width: 100%; border-collapse: collapse; text-align: left; font-size: 13px; }
+        th { background: var(--bg-dark); color: var(--text-muted); font-weight: 600; text-transform: uppercase; font-size: 11px; padding: 12px 15px; border-bottom: 2px solid var(--border-color); }
+        td { padding: 12px 15px; border-bottom: 1px solid var(--border-color); font-weight: 600; }
+        tr:hover td { background: rgba(255,255,255,0.02); }
+
+        .badge-color { padding: 4px 8px; border-radius: 4px; font-weight: 800; color: white; display: inline-block; font-size: 11px; }
+        .bg-red { background: var(--red); }
+        .bg-green { background: var(--green); }
+    </style>
+</head>
+<body>
+
+<div class="admin-wrapper">
+    <header>
+        <div>
+            <h1>👑 H4X CLOUD ENGINE CONTROL DESK</h1>
+            <p style="color: var(--text-muted); font-size: 13px; margin-top: 2px;">
+                CURRENT ROUND: <span id="currentGlobalPeriodDisplay" style="color: white; font-weight: 800;">Loading...</span>
+            </p>
+        </div>
+        <div class="timer-badge" id="adminCountdownDisplay">00:00</div>
+    </header>
+
+    <div class="top-grid">
+        <!-- Live Pool 1 -->
+        <div class="card" style="border-left: 5px solid var(--red);">
+            <h3>Current Red Stakes Pool</h3>
+            <h2 id="poolRedValue" style="color: var(--red);">₹0.00</h2>
+            <p style="font-size: 11px; color: var(--text-muted); margin-top: 4px;">Total active on RED this round</p>
+        </div>
+
+        <!-- Live Pool 2 -->
+        <div class="card" style="border-left: 5px solid var(--green);">
+            <h3>Current Green Stakes Pool</h3>
+            <h2 id="poolGreenValue" style="color: var(--green);">₹0.00</h2>
+            <p style="font-size: 11px; color: var(--text-muted); margin-top: 4px;">Total active on GREEN this round</p>
+        </div>
+
+        <!-- Dynamic Rules Configurations -->
+        <div class="card">
+            <h3>Betting Limits Adjustment</h3>
+            <div class="config-inputs">
+                <div class="input-group">
+                    <label>MINIMUM ALLOWED BET (₹)</label>
+                    <input type="number" id="inputMinBet" value="10">
+                </div>
+                <div class="input-group">
+                    <label>MAXIMUM ALLOWED BET (₹)</label>
+                    <input type="number" id="inputMaxBet" value="10000">
+                </div>
+                <button class="btn-action" onclick="saveGlobalLimitsToDatabase()">Update Limits</button>
+            </div>
+        </div>
+
+        <!-- Algorithmic Control Center (With Reset Feature) -->
+        <div class="card" style="border-top: 4px solid var(--orange);">
+            <h3>Manual Engine Control</h3>
+            <p style="font-size: 11px; color: var(--text-muted); line-height: 1.4;">Force next result or reset to Auto Mode:</p>
+            <div class="force-panel">
+                <div class="btn-row">
+                    <button class="force-btn f-red" onclick="forceNextOutcomeControl('R')">Force RED</button>
+                    <button class="force-btn f-green" onclick="forceNextOutcomeControl('G')">Force GREEN</button>
+                </div>
+                <button class="force-btn f-reset" onclick="resetToAutoAlgorithm()">🔄 Reset to Auto Algorithm</button>
+            </div>
+            <div id="statusLogger">Status: Loading Engine...</div>
+        </div>
+    </div>
+
+    <!-- Live Current Round Only Table Layout -->
+    <div class="table-section">
+        <h3>
+            <span>📋 Live Active Round Betting Tracker (Current Period Only)</span>
+            <span style="font-size: 12px; color: var(--green); font-weight: bold; background: rgba(46,213,115,0.1); padding: 4px 10px; border-radius: 8px;">Auto-clears every round</span>
+        </h3>
+        <div class="table-responsive">
+            <table>
+                <thead>
+                    <tr>
+                        <th>Time Placed</th>
+                        <th>User UID</th>
+                        <th>Target Period</th>
+                        <th>Prediction</th>
+                        <th>Staked Amount</th>
+                        <th>Status</th>
+                    </tr>
+                </thead>
+                <tbody id="liveBetsTableBody">
+                    <tr>
+                        <td colspan="6" style="text-align: center; color: var(--text-muted); padding: 30px;">Waiting for new round bets...</td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+<script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
+    import { getDatabase, ref, onValue, set, remove } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-database.js";
+
+    const firebaseConfig = {
+        apiKey: "AIzaSyD2TYdbhZwLSQJEfV2tHOawK-XzKvOKlkQ",
+        authDomain: "h4xlifafa.firebaseapp.com",
+        databaseURL: "https://h4xlifafa-default-rtdb.firebaseio.com",
+        projectId: "h4xlifafa",
+        storageBucket: "h4xlifafa.firebasestorage.app",
+        messagingSenderId: "51114522531",
+        appId: "1:51114522531:web:face1332e055ed44690c16"
+    };
+
+    const app = initializeApp(firebaseConfig);
+    const db = getDatabase(app);
+
+    let activeGlobalPeriodStr = "";
+    let previousLoggedPeriod = "";
+
+    // 1. Clock Sync Loop
+    setInterval(() => {
+        const timeNow = Date.now();
+        const benchmarkBase = new Date(2026, 0, 1, 0, 0, 0, 0).getTime(); 
+        const deltaMs = timeNow - benchmarkBase;
+        
+        const totalMinutesElapsed = Math.floor(deltaMs / 60000);
+        const remainderSeconds = 60 - Math.floor((deltaMs % 60000) / 1000);
+        
+        const dObj = new Date(timeNow);
+        const padM = String(dObj.getMonth()+1).padStart(2,'0');
+        const padD = String(dObj.getDate()).padStart(2,'0');
+        
+        activeGlobalPeriodStr = `2026${padM}${padD}${String(totalMinutesElapsed % 10000).padStart(4,'0')}`;
+        
+        document.getElementById("currentGlobalPeriodDisplay").innerText = activeGlobalPeriodStr;
+        
+        let displaySec = remainderSeconds === 60 ? 0 : remainderSeconds;
+        document.getElementById("adminCountdownDisplay").innerText = `00:${displaySec < 10 ? '0' : ''}${displaySec}`;
+
+        syncLiveStakesPoolIndicators(activeGlobalPeriodStr);
+        monitorEngineStatusMode(activeGlobalPeriodStr);
+
+        if(activeGlobalPeriodStr !== previousLoggedPeriod) {
+            previousLoggedPeriod = activeGlobalPeriodStr;
+            listenToCurrentRoundBetsOnly(activeGlobalPeriodStr);
+        }
+    }, 1000);
+
+    // 2. Monitor Current Mode Status (Auto vs Manual Override)
+    function monitorEngineStatusMode(currentPeriod) {
+        onValue(ref(db, `admin_override_node/${currentPeriod}`), (snap) => {
+            const logger = document.getElementById("statusLogger");
+            if (snap.exists() && snap.val().forced_result) {
+                let choice = snap.val().forced_result === 'R' ? '🔴 RED' : '🟢 GREEN';
+                logger.innerHTML = `Mode: <span style="color:var(--orange);">MANUAL OVERRIDE (${choice})</span>`;
+            } else {
+                logger.innerHTML = `Mode: <span style="color:var(--green);">🤖 AUTO ALGORITHM ACTIVE</span>`;
+            }
+        }, { onlyOnce: true });
+    }
+
+    // 3. Sync Pools
+    function syncLiveStakesPoolIndicators(targetPeriodId) {
+        onValue(ref(db, `global_period_bets/${targetPeriodId}`), (snap) => {
+            if(snap.exists()) {
+                let data = snap.val();
+                document.getElementById("poolRedValue").innerText = "₹" + parseFloat(data.Red?.total_money || 0).toFixed(2);
+                document.getElementById("poolGreenValue").innerText = "₹" + parseFloat(data.Green?.total_money || 0).toFixed(2);
+            } else {
+                document.getElementById("poolRedValue").innerText = "₹0.00";
+                document.getElementById("poolGreenValue").innerText = "₹0.00";
+            }
+        }, { onlyOnce: true });
+    }
+
+    // 4. Current Round Active Bets Only
+    let currentBetsListenerUnsubscribe = null;
+    function listenToCurrentRoundBetsOnly(currentRunningPeriod) {
+        if (currentBetsListenerUnsubscribe) currentBetsListenerUnsubscribe();
+
+        const tBody = document.getElementById("liveBetsTableBody");
+        onValue(ref(db, "user_bets"), (snap) => {
+            if(!snap.exists()) {
+                tBody.innerHTML = `<tr><td colspan="6" style="text-align: center; color: var(--text-muted); padding: 30px;">No bets placed yet.</td></tr>`;
+                return;
+            }
+
+            let currentRoundBetsList = [];
+            snap.forEach((userNode) => {
+                let currentUserId = userNode.key;
+                let activeBetNode = userNode.child(currentRunningPeriod);
+                if(activeBetNode.exists()) {
+                    currentRoundBetsList.push({
+                        uid: currentUserId,
+                        periodId: currentRunningPeriod,
+                        ...activeBetNode.val()
+                    });
+                }
+            });
+
+            currentRoundBetsList.sort((a, b) => b.time - a.time);
+
+            if(currentRoundBetsList.length === 0) {
+                tBody.innerHTML = `<tr><td colspan="6" style="text-align: center; color: var(--text-muted); padding: 30px;">Waiting for bets on Period ${currentRunningPeriod}...</td></tr>`;
+                return;
+            }
+
+            let htmlRowsData = "";
+            currentRoundBetsList.forEach((bet) => {
+                let dateObj = new Date(parseInt(bet.time));
+                let formattedTime = `${String(dateObj.getHours() % 12 || 12).padStart(2, '0')}:${String(dateObj.getMinutes()).padStart(2, '0')}:${String(dateObj.getSeconds()).padStart(2, '0')} ${dateObj.getHours() >= 12 ? 'PM' : 'AM'}`;
+                let choiceBadge = bet.bet_on === 'Red' ? '<span class="badge-color bg-red">🔴 RED</span>' : '<span class="badge-color bg-green">🟢 GREEN</span>';
+
+                htmlRowsData += `
+                    <tr>
+                        <td style="color:var(--text-muted); font-family:monospace;">${formattedTime}</td>
+                        <td style="color:var(--orange); font-family:monospace; font-size:12px;">${bet.uid.substring(0, 10)}...</td>
+                        <td style="font-weight:700; color:white;">${bet.periodId}</td>
+                        <td>${choiceBadge}</td>
+                        <td style="color:white; font-size:14px; font-weight:800;">₹${parseFloat(bet.amount).toFixed(2)}</td>
+                        <td><span style="color:orange; text-transform:uppercase; font-size:11px;">${bet.status}</span></td>
+                    </tr>
+                `;
+            });
+            tBody.innerHTML = htmlRowsData;
+        });
+    }
+
+    // 5. Force Manual Override
+    window.forceNextOutcomeControl = async (forcedChar) => {
+        if(!activeGlobalPeriodStr) return alert("Engine out of sync.");
+        await set(ref(db, `admin_override_node/${activeGlobalPeriodStr}`), { forced_result: forcedChar });
+    };
+
+    // 6. 🔄 RESET TO AUTO ALGORITHM FUNCTION
+    window.resetToAutoAlgorithm = async () => {
+        if(!activeGlobalPeriodStr) return alert("Engine out of sync.");
+        // Target period ki override value ko database se delete/remove kar dega
+        await remove(ref(db, `admin_override_node/${activeGlobalPeriodStr}`));
+        alert("Success: Mode shifted back to Auto Algorithm! 🤖");
+    };
+
+    // Save/Load Config Limits
+    window.saveGlobalLimitsToDatabase = async () => {
+        let minVal = parseFloat(document.getElementById("inputMinBet").value);
+        let maxVal = parseFloat(document.getElementById("inputMaxBet").value);
+        if(isNaN(minVal) || isNaN(maxVal) || minVal < 0 || maxVal <= minVal) return alert("Invalid inputs.");
+        await set(ref(db, "system_configs/bet_limits"), { min_bet: minVal, max_bet: maxVal });
+        alert("Limits Updated!");
+    };
+    onValue(ref(db, "system_configs/bet_limits"), (snap) => {
+        if(snap.exists()) {
+            document.getElementById("inputMinBet").value = snap.val().min_bet || 10;
+            document.getElementById("inputMaxBet").value = snap.val().max_bet || 10000;
+        }
+    });
+</script>
+</body>
+</html>
