@@ -7,20 +7,15 @@
     <style>
         * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; }
         body { background: #ffffff; min-height: 100vh; display: flex; justify-content: center; align-items: center; padding: 20px; }
-        
         .card { background: #ffffff; border-radius: 20px; padding: 40px 30px; width: 100%; max-width: 440px; box-shadow: 0 10px 40px rgba(0,0,0,0.08); text-align: center; border: 1px solid #f0f0f0; }
-        
         h2 { color: #1a1a1a; font-size: 28px; margin-bottom: 8px; font-weight: 700; }
         p.subtitle { color: #888; font-size: 14px; margin-bottom: 25px; }
-        
         .input-group { margin-bottom: 18px; text-align: left; }
         .input-group label { display: block; font-size: 13px; color: #555; font-weight: 600; margin-bottom: 6px; }
         .input-group input { width: 100%; padding: 12px 16px; border: 2px solid #e8e8e8; border-radius: 12px; font-size: 15px; outline: none; transition: all 0.3s ease; background: #fafafa; }
         .input-group input:focus { border-color: #ff4757; background: #ffffff; box-shadow: 0 0 10px rgba(255, 71, 87, 0.1); }
-        
         .glow-btn { width: 100%; padding: 14px; border: none; border-radius: 12px; font-size: 16px; font-weight: 700; color: white; background: linear-gradient(135deg, #ff4757, #ff6b81); cursor: pointer; transition: all 0.3s ease; box-shadow: 0 4px 15px rgba(255, 71, 87, 0.4); margin-top: 10px; }
         .glow-btn:hover { box-shadow: 0 0 25px rgba(255, 71, 87, 0.7); transform: translateY(-2px); }
-        
         .switch-page { margin-top: 25px; font-size: 14px; color: #666; }
         .switch-page a { color: #ff4757; font-weight: 600; text-decoration: none; }
     </style>
@@ -36,17 +31,18 @@
                 <label>Choose Username</label>
                 <input type="text" id="reg-username" required placeholder="e.g., h4x_king">
             </div>
-
             <div class="input-group">
                 <label>Email Address</label>
                 <input type="email" id="reg-email" required placeholder="alex@gmail.com">
             </div>
-
             <div class="input-group">
                 <label>Phone Number</label>
                 <input type="tel" id="reg-phone" required placeholder="e.g., 9876543210">
             </div>
-            
+            <div class="input-group">
+                <label>Referral Code (Optional)</label>
+                <input type="text" id="reg-referral" placeholder="Enter friend's username">
+            </div>
             <div class="input-group">
                 <label>Password</label>
                 <input type="password" id="reg-password" required placeholder="Minimum 6 characters">
@@ -58,13 +54,11 @@
         <p class="switch-page">Already have an account? <a href="index.html">Login here</a></p>
     </div>
 
-    <!-- Firebase SDKs -->
     <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-auth-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-database-compat.js"></script>
 
     <script>
-        // Use the exact config
         const firebaseConfig = {
             apiKey: "AIzaSyD2TYdbhZwLSQJEfV2tHOawK-XzKvOKlkQ",
             authDomain: "h4xlifafa.firebaseapp.com",
@@ -79,33 +73,49 @@
         const auth = firebase.auth();
         const db = firebase.database();
 
-        // Registration Logic
-        document.getElementById('register-form').addEventListener('submit', (e) => {
+        document.getElementById('register-form').addEventListener('submit', async (e) => {
             e.preventDefault();
             const username = document.getElementById('reg-username').value.trim();
             const email = document.getElementById('reg-email').value.trim();
             const phone = document.getElementById('reg-phone').value.trim();
             const password = document.getElementById('reg-password').value;
+            const refCode = document.getElementById('reg-referral').value.trim();
 
-            // 1. Firebase Auth me user account create karna
-            auth.createUserWithEmailAndPassword(email, password)
-                .then((userCredential) => {
-                    const userId = userCredential.user.uid;
+            try {
+                // 1. Create User
+                const userCredential = await auth.createUserWithEmailAndPassword(email, password);
+                const userId = userCredential.user.uid;
 
-                    // 2. Realtime Database me extra fields mapping & initial wallet balance add karna
-                    db.ref('users/' + userId).set({
-                        username: username,
-                        email: email,
-                        phone: phone,
-                        wallet_balance: 0 // starting cash bonus ya zero balance
-                    }).then(() => {
-                        alert("Account Registered successfully!");
-                        window.location.href = "index.html"; // Redirect to Login page
-                    });
-                })
-                .catch((error) => {
-                    alert("Registration Failed: " + error.message);
+                // 2. Save Basic User Data
+                await db.ref('users/' + userId).set({
+                    username: username,
+                    email: email,
+                    phone: phone,
+                    wallet_balance: 0,
+                    referred_by: refCode || "none"
                 });
+
+                // 3. Referral Tracking logic (Fast Search)
+                if (refCode) {
+                    const snapshot = await db.ref('users').orderByChild('username').equalTo(refCode).once('value');
+                    
+                    if (snapshot.exists()) {
+                        // Agar username mil gaya, toh uski ID nikalo
+                        let referrerUid = Object.keys(snapshot.val())[0];
+                        
+                        // Referrer ke list me naye user ko add karo
+                        db.ref('users/' + referrerUid + '/referrals/' + userId).set({
+                            username: username,
+                            joined_at: Date.now()
+                        });
+                    }
+                }
+
+                alert("Account Registered successfully!");
+                window.location.href = "index.html";
+            } catch (error) {
+                alert("Registration Failed: " + error.message);
+            }
         });
     </script>
 </body>
