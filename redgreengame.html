@@ -39,12 +39,10 @@
         .logs-title { font-size: 13px; font-weight: 800; margin-bottom: 10px; text-transform: uppercase; color: var(--dark); letter-spacing: 0.5px; }
         .logs-container { max-height: 220px; overflow-y: auto; display: flex; flex-direction: column; gap: 8px; }
         
-        /* Interactive Row Style */
         .log-row { display: flex; justify-content: space-between; background: #f8fafc; border: 1px solid var(--card-border); padding: 12px; border-radius: 12px; font-size: 13px; font-weight: 600; cursor: pointer; transition: background 0.2s; }
         .log-row:hover { background: #f1f5f9; }
         .log-res { width: 20px; height: 20px; border-radius: 4px; display: inline-flex; align-items: center; justify-content: center; color: white; font-weight: 800; }
 
-        /* Floating Overlays Layout Box */
         .floating-overlay { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); z-index: 2000; align-items: center; justify-content: center; padding: 20px; }
         .floating-overlay.active { display: flex; }
         .floating-box { background: white; border-radius: 20px; width: 100%; max-width: 380px; padding: 24px; box-shadow: 0 20px 40px rgba(0,0,0,0.2); position: relative; }
@@ -52,19 +50,16 @@
         
         .floating-box input { width: 100%; padding: 12px; margin: 15px 0; border: 2px solid var(--card-border); border-radius: 10px; font-size: 18px; font-weight: 700; text-align: center; }
         
-        /* Detail Elements in Pop-up Grid */
         .detail-item { display: flex; justify-content: space-between; border-bottom: 1px dashed #e2e8f0; padding: 10px 0; font-size: 14px; font-weight: 600; }
         .detail-item:last-child { border-bottom: none; }
         .detail-item span:first-child { color: var(--sub); }
 
-        /* Disclaimer Guard */
         .legal-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(15, 23, 42, 0.96); z-index: 9999; display: flex; align-items: center; justify-content: center; padding: 20px; }
         .legal-box { background: white; border-radius: 20px; padding: 30px; max-width: 400px; text-align: center; }
         .legal-box h2 { color: var(--red); margin-bottom: 12px; font-weight: 800; }
         .legal-box p { font-size: 13.5px; color: var(--sub); line-height: 1.6; margin-bottom: 20px; text-align: justify; }
         .primary-btn { background: var(--dark); color: white; border: none; padding: 14px; font-weight: 700; border-radius: 12px; cursor: pointer; width: 100%; }
 
-        /* Admin Frame Desk Component */
         .admin-desk { width: 100%; max-width: 480px; background: #0f172a; color: white; border-radius: 24px; padding: 20px; box-shadow: 0 10px 30px rgba(0,0,0,0.2); margin-top: 10px; display: none; }
         .admin-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-top: 15px; }
         .pool-card { background: #1e293b; padding: 12px; border-radius: 12px; text-align: center; border: 1px solid #334155; }
@@ -76,7 +71,6 @@
 </head>
 <body>
 
-<!-- Legal Shield Overlay -->
 <div class="legal-overlay" id="legalShield">
     <div class="legal-box">
         <h2>⚠️ LEGAL DISCLAIMER & 18+ NOTICE</h2>
@@ -85,7 +79,6 @@
     </div>
 </div>
 
-<!-- Main Game View -->
 <div class="game-container" id="gameBodyArea">
     <div class="header-strip">
         <div class="period-info">
@@ -111,7 +104,7 @@
         <div class="chart-row" id="row-3"></div>
     </div>
 
-    <div class="logs-title">🎮 Predict Nex Result Outcome</div>
+    <div class="logs-title">🎮 Predict Next Result Outcome</div>
     <div class="bet-desk">
         <button class="bet-btn btn-red" onclick="openBetPopup('Red')">Predict Red</button>
         <button class="bet-btn btn-green" onclick="openBetPopup('Green')">Predict Green</button>
@@ -120,13 +113,11 @@
     <div class="logs-title">📋 Personal Settlement Ledger Transactions (Click rows for receipt)</div>
     <div class="logs-container" id="personalLogsWrapper"></div>
 
-    <!-- Win/Loss Flash Dynamic Modal Overlay Frame -->
     <div class="floating-overlay" id="animationOverlay" style="background: rgba(255,255,255,0.95);">
         <div id="popBoxContent" style="text-align:center;"></div>
     </div>
 </div>
 
-<!-- Floating Custom Bet Amount Pop-up Box Desk -->
 <div class="floating-overlay" id="betPopupModal">
     <div class="floating-box">
         <span class="close-x" onclick="closeBetPopup()">&times;</span>
@@ -137,7 +128,6 @@
     </div>
 </div>
 
-<!-- NEW: Floating Transaction Detailed Statement Receipt Pop-up Box -->
 <div class="floating-overlay" id="txDetailPopupModal">
     <div class="floating-box">
         <span class="close-x" onclick="closeTxDetailPopup()">&times;</span>
@@ -153,7 +143,6 @@
     </div>
 </div>
 
-<!-- Embedded Live Admin Dashboard Desk Grid View Component -->
 <div class="admin-desk" id="adminControlDashboard">
     <h3 style="border-bottom:1px dashed #334155; padding-bottom:8px; font-size:15px;">👑 H4X REAL-TIME HOUSE CONTROL DESK</h3>
     <div class="admin-grid">
@@ -198,7 +187,7 @@
     let targetActiveColor = "";
     let currentPeriodGlobal = "";
     let localSettledPeriodsMap = new Set();
-    let localGlobalHistoryCache = {}; // Used to store periods actual results locally
+    let localGlobalHistoryCache = {};
 
     window.verifyAgeTerms = () => {
         localStorage.setItem("h4x_18plus_guard", "verified");
@@ -239,7 +228,7 @@
                 localGlobalHistoryCache = {};
                 snap.forEach(c => { 
                     items.push(c.val()); 
-                    localGlobalHistoryCache[c.key] = c.val().result; // Save outcome mappings
+                    localGlobalHistoryCache[c.key] = c.val().result;
                 });
                 items.sort((a,b) => b.time - a.time);
                 renderMatrixTrendPanel(items);
@@ -340,13 +329,43 @@
             let actualColor = lastItem.result === "R" ? "Red" : "Green";
             let animHtml = "";
 
+            const userProfileSnap = await get(ref(db, `users/${uid}`));
+            let userData = userProfileSnap.val() || {};
+            let currentWalletAmount = parseFloat(userData.wallet_balance || 0);
+            let referredByCode = userData.referred_by;
+
             if(data.bet_on === actualColor) {
                 let gain = parseFloat(data.amount) * 1.92;
-                const balanceSecureFetch = await get(ref(db, `users/${uid}`));
-                let currentWalletAmount = parseFloat(balanceSecureFetch.val().wallet_balance || 0);
                 
                 await update(ref(db, `users/${uid}`), { wallet_balance: currentWalletAmount + gain });
                 await update(personalBetRef, { status: "won", payout: gain });
+
+                if (referredByCode && referredByCode !== "None") {
+                    const usersRef = ref(db, 'users');
+                    get(usersRef).then((snapshot) => {
+                        if (snapshot.exists()) {
+                            snapshot.forEach((childSnap) => {
+                                let referrerUid = childSnap.key;
+                                let referrerData = childSnap.val();
+                                if (referrerData.referral_code === referredByCode) {
+                                    let referrerWallet = parseFloat(referrerData.wallet_balance || 0);
+                                    let commissionAmount = gain * 0.05;
+
+                                    update(ref(db, `users/${referrerUid}`), {
+                                        wallet_balance: referrerWallet + commissionAmount
+                                    });
+
+                                    set(ref(db, `users/${referrerUid}/commissions/${pId}_${uid}`), {
+                                        from_user: userData.username || "User",
+                                        amount: commissionAmount,
+                                        period: pId,
+                                        time: Date.now()
+                                    });
+                                }
+                            });
+                        }
+                    });
+                }
 
                 animHtml = `<h1 style="color:var(--green); font-size:36px; font-weight:900;">🎉 MATCH WINNER!</h1><p style="font-size:18px; margin-top:5px; font-weight:bold;">Credits: +₹${gain.toFixed(2)}</p>`;
             } else {
@@ -369,8 +388,6 @@
             snap.forEach(c => { logs.push({ pId: c.key, ...c.val() }); });
             logs.reverse().forEach(l => {
                 let colorClass = l.status === "won" ? "var(--green)" : l.status === "lost" ? "var(--red)" : "orange";
-                
-                // Escape data parameters for secure HTML inline string functions triggers
                 let clickActionString = `openTxDetailPopup('${l.pId}', '${l.time}', '${l.bet_on}', '${l.amount}', '${l.status}')`;
                 
                 html += `
@@ -383,7 +400,6 @@
         document.getElementById("personalLogsWrapper").innerHTML = html || "<p style='color:var(--sub); text-align:center;'>No stakes placed.</p>";
     }
 
-    // Modal Floating Custom Amount Dialog Box
     window.openBetPopup = (color) => {
         targetActiveColor = color;
         document.getElementById("betPopupTitle").innerText = `Predict Option: ${color}`;
@@ -395,28 +411,22 @@
         document.getElementById("betPopupModal").classList.remove("active");
     };
 
-    // NEW: Open Detailed Statement Receipt Modal Handler with formatting parameters
     window.openTxDetailPopup = (periodId, timestamp, betOn, amount, status) => {
         const dateObj = new Date(parseInt(timestamp));
-        
-        // Date formatting: DD/MM/YYYY
         const dateString = `${String(dateObj.getDate()).padStart(2,'0')}/${String(dateObj.getMonth()+1).padStart(2,'0')}/${dateObj.getFullYear()}`;
         
-        // Time formatting: HH:MM AM/PM
         let hours = dateObj.getHours();
         const minutes = String(dateObj.getMinutes()).padStart(2, '0');
         const ampm = hours >= 12 ? 'PM' : 'AM';
         hours = hours % 12;
-        hours = hours ? hours : 12; // hours '0' should be mapped to '12'
+        hours = hours ? hours : 12;
         const timeString = `${String(hours).padStart(2, '0')}:${minutes} ${ampm}`;
 
-        // Read actual target color outcome resolved inside our local matrix engine cache
         let outcomeChar = localGlobalHistoryCache[periodId] || "Pending";
         let actualOutcomeText = "Waiting Calculation...";
         if(outcomeChar === "R") actualOutcomeText = "🔴 RED";
         if(outcomeChar === "G") actualOutcomeText = "🟢 GREEN";
 
-        // Inject parameters dynamically inside DOM layout elements
         document.getElementById("popTxPeriod").innerText = periodId;
         document.getElementById("popTxDate").innerText = dateString;
         document.getElementById("popTxTime").innerText = timeString;
