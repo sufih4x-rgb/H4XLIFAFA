@@ -1,0 +1,355 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>H4X Premium - Claim & Lifafa Desk</title>
+    <style>
+        :root {
+            --bg-main: #f1f5f9;
+            --card-bg: #ffffff;
+            --dark: #0f172a;
+            --sub: #64748b;
+            --green: #2ed573;
+            --accent: #6366f1;
+            --card-border: #e2e8f0;
+        }
+        * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Segoe UI', sans-serif; }
+        body { background: var(--bg-main); color: var(--dark); padding: 15px; display: flex; flex-direction: column; align-items: center; min-height: 100vh; }
+        
+        .container { width: 100%; max-width: 480px; background: var(--card-bg); border-radius: 24px; padding: 20px; box-shadow: 0 10px 30px rgba(0,0,0,0.05); margin-bottom: 20px; position: relative; }
+        .header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px; border-bottom: 1px solid var(--card-border); padding-bottom: 12px; }
+        .header h2 { font-size: 18px; font-weight: 800; color: var(--dark); }
+        .back-btn { font-size: 13px; font-weight: 700; color: var(--accent); text-decoration: none; cursor: pointer; }
+
+        .wallet-badge-card { background: #0f172a; color: #fff; padding: 14px 18px; border-radius: 14px; display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px; }
+        .wallet-badge-card h4 { font-size: 11px; color: var(--sub); text-transform: uppercase; }
+        .wallet-badge-card h2 { font-size: 20px; font-weight: 800; color: var(--green); }
+
+        .tabs { display: flex; background: #f8fafc; padding: 4px; border-radius: 12px; border: 1px solid var(--card-border); margin-bottom: 15px; }
+        .tab-btn { flex: 1; padding: 10px; text-align: center; font-size: 13px; font-weight: 700; cursor: pointer; border-radius: 10px; color: var(--sub); transition: 0.2s; }
+        .tab-btn.active { background: var(--dark); color: #fff; }
+
+        .tab-content { display: none; }
+        .tab-content.active { display: block; }
+
+        .input-group { margin-bottom: 14px; }
+        .input-label { font-size: 11px; font-weight: 700; color: var(--sub); text-transform: uppercase; display: block; margin-bottom: 5px; }
+        input { width: 100%; background: #f8fafc; border: 2px solid var(--card-border); padding: 12px; border-radius: 12px; font-size: 15px; font-weight: 700; outline: none; }
+        input:focus { border-color: var(--accent); background: #ffffff; }
+
+        .primary-btn { width: 100%; padding: 14px; background: linear-gradient(90deg, #6366f1, #4f46e5); color: white; border: none; border-radius: 12px; font-size: 15px; font-weight: 700; cursor: pointer; box-shadow: 0 4px 15px rgba(99,102,241,0.3); margin-top: 5px; }
+        .primary-btn:hover { opacity: 0.9; }
+
+        .statement-container { margin-top: 20px; }
+        .statement-title { font-size: 13px; font-weight: 800; margin-bottom: 10px; text-transform: uppercase; color: var(--dark); }
+        .history-scroll { max-height: 220px; overflow-y: auto; display: flex; flex-direction: column; gap: 8px; }
+        .row { background: #ffffff; border: 1px solid var(--card-border); padding: 12px; border-radius: 12px; cursor: pointer; transition: 0.2s; }
+        .row:hover { background: #f8fafc; border-color: var(--accent); }
+        .row-header { display: flex; justify-content: space-between; font-weight: 700; font-size: 14px; }
+        .status { font-weight: 800; font-size: 11px; text-transform: uppercase; }
+        .status.created { color: var(--accent); }
+        .status.claimed { color: var(--green); }
+
+        .modal-overlay { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); z-index: 1000; align-items: center; justify-content: center; padding: 20px; }
+        .modal-overlay.active { display: flex; }
+        .floating-box { background: #ffffff; border-radius: 20px; width: 100%; max-width: 400px; padding: 22px; box-shadow: 0 20px 40px rgba(0,0,0,0.2); position: relative; max-height: 85vh; overflow-y: auto; }
+        .modal-title { font-size: 17px; font-weight: 800; margin-bottom: 12px; text-align: center; border-bottom: 1px dashed var(--card-border); padding-bottom: 10px; }
+        .modal-detail-row { display: flex; justify-content: space-between; margin-bottom: 8px; font-size: 13px; font-weight: 600; }
+        .modal-detail-row span:first-child { color: var(--sub); }
+        .close-modal-btn { position: absolute; top: 12px; right: 18px; font-size: 20px; font-weight: 700; cursor: pointer; color: var(--sub); }
+        .claimed-users-box { margin-top: 12px; border-top: 1px solid var(--card-border); padding-top: 10px; }
+        .claimed-user-item { font-size: 12px; font-weight: 700; display: flex; justify-content: space-between; background: #f8fafc; padding: 6px 10px; border-radius: 8px; margin-bottom: 5px; }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <div class="header">
+        <h2>🎁 Lifafa & Claim Desk</h2>
+        <a class="back-btn" href="dashboard.html">← Back to App</a>
+    </div>
+
+    <!-- WALLET BALANCE CARD -->
+    <div class="wallet-badge-card">
+        <div>
+            <h4>Your Wallet Balance</h4>
+            <h2 id="userWalletDisplay">₹0.00</h2>
+        </div>
+        <div style="font-size: 24px;">💰</div>
+    </div>
+
+    <div class="tabs">
+        <div class="tab-btn active" onclick="switchTab('create')">Create Lifafa</div>
+        <div class="tab-btn" onclick="switchTab('claim')">Claim Code</div>
+    </div>
+
+    <!-- CREATE LIFAFA TAB -->
+    <div id="createTab" class="tab-content active">
+        <div class="input-group">
+            <label class="input-label">Lifafa / Campaign Name</label>
+            <input type="text" id="lifafaNameInput" placeholder="e.g. Party Bonus">
+        </div>
+        <div class="input-group">
+            <label class="input-label">Amount Per User (₹)</label>
+            <input type="number" id="lifafaPerUserAmt" placeholder="e.g. 10">
+        </div>
+        <div class="input-group">
+            <label class="input-label">Total Users Limit</label>
+            <input type="number" id="lifafaTotalUsers" placeholder="e.g. 5">
+        </div>
+        <div class="input-group">
+            <label class="input-label">Custom Secret Code</label>
+            <input type="text" id="lifafaSecretCode" placeholder="e.g. H4XPARTY2026">
+        </div>
+        <button class="primary-btn" onclick="createNewLifafaCode()">🚀 Generate & Lock Funds</button>
+    </div>
+
+    <!-- CLAIM CODE TAB -->
+    <div id="claimTab" class="tab-content">
+        <div class="input-group">
+            <label class="input-label">Enter Secret Claim Code</label>
+            <input type="text" id="claimCodeInput" placeholder="Enter code here...">
+        </div>
+        <button class="primary-btn" onclick="claimSecretCode()">🎁 Claim Instant Reward</button>
+    </div>
+
+    <!-- TRANSACTION HISTORY LEDGER -->
+    <div class="statement-container">
+        <h3 class="statement-title">📋 Activity Ledger (Click for Details)</h3>
+        <div class="history-scroll" id="historyContainer">
+            <p style="color:var(--sub); text-align:center; font-size:13px;">No history available.</p>
+        </div>
+    </div>
+</div>
+
+<!-- DETAILS MODAL -->
+<div class="modal-overlay" id="txnModal">
+    <div class="floating-box">
+        <span class="close-modal-btn" onclick="closeTxnModal()">&times;</span>
+        <div class="modal-title">Activity Desk Details</div>
+        <div id="modalDetailsContent"></div>
+    </div>
+</div>
+
+<script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
+    import { getDatabase, ref, get, set, update } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-database.js";
+    import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
+
+    const firebaseConfig = {
+        apiKey: "AIzaSyD2TYdbhZwLSQJEfV2tHOawK-XzKvOKlkQ",
+        authDomain: "h4xlifafa.firebaseapp.com",
+        databaseURL: "https://h4xlifafa-default-rtdb.firebaseio.com",
+        projectId: "h4xlifafa",
+        storageBucket: "h4xlifafa.firebasestorage.app",
+        messagingSenderId: "51114522531",
+        appId: "1:51114522531:web:face1332e055ed44690c16"
+    };
+
+    const app = initializeApp(firebaseConfig);
+    const db = getDatabase(app);
+    const auth = getAuth(app);
+
+    let currentUid = "";
+    let currentUsername = "User";
+    let globalUserWallet = 0;
+    let globalLifafaLogs = {};
+
+    onAuthStateChanged(auth, async (user) => {
+        if(user) {
+            currentUid = user.uid;
+            const userSnap = await get(ref(db, `users/${currentUid}`));
+            if(userSnap.exists()) {
+                let uData = userSnap.val();
+                currentUsername = uData.username || "User";
+                globalUserWallet = parseFloat(uData.wallet_balance || 0);
+                document.getElementById("userWalletDisplay").innerText = "₹" + globalUserWallet.toFixed(2);
+            }
+            loadUserLifafaLogs();
+        } else {
+            window.location.href = "index.html";
+        }
+    });
+
+    window.switchTab = (tabName) => {
+        document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+        document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
+        if(tabName === 'create') {
+            document.querySelectorAll('.tab-btn')[0].classList.add('active');
+            document.getElementById('createTab').classList.add('active');
+        } else {
+            document.querySelectorAll('.tab-btn')[1].classList.add('active');
+            document.getElementById('claimTab').classList.add('active');
+        }
+    };
+
+    window.createNewLifafaCode = async () => {
+        let name = document.getElementById("lifafaNameInput").value.trim();
+        let perUser = parseFloat(document.getElementById("lifafaPerUserAmt").value);
+        let maxUsers = parseInt(document.getElementById("lifafaTotalUsers").value);
+        let code = document.getElementById("lifafaSecretCode").value.trim().toUpperCase();
+
+        if(!name || !perUser || !maxUsers || !code) return alert("Please fill all fields properly!");
+        let totalRequiredBudget = perUser * maxUsers;
+
+        if(globalUserWallet < totalRequiredBudget) {
+            return alert(`Insufficient Funds! Required total budget is ₹${totalRequiredBudget}, but your balance is ₹${globalUserWallet.toFixed(2)}.`);
+        }
+
+        const codeCheckSnap = await get(ref(db, `lifafa_codes/${code}`));
+        if(codeCheckSnap.exists()) {
+            return alert("This secret code already exists! Choose another one.");
+        }
+
+        // Deduct budget securely
+        let newWalletBalance = globalUserWallet - totalRequiredBudget;
+        await update(ref(db, `users/${currentUid}`), { wallet_balance: newWalletBalance });
+        globalUserWallet = newWalletBalance;
+        document.getElementById("userWalletDisplay").innerText = "₹" + globalUserWallet.toFixed(2);
+
+        let campaignData = {
+            creator_id: currentUid,
+            creator_name: currentUsername,
+            name: name,
+            amount_per_user: perUser,
+            total_users_limit: maxUsers,
+            secret_code: code,
+            created_at: Date.now(),
+            claimed_count: 0,
+            claimed_users: {}
+        };
+
+        await set(ref(db, `lifafa_codes/${code}`), campaignData);
+
+        // Auto claim once for creator
+        await processClaimExecution(code, campaignData);
+
+        alert("Lifafa created successfully and your 1 auto-claim processed!");
+        document.getElementById("lifafaNameInput").value = "";
+        document.getElementById("lifafaPerUserAmt").value = "";
+        document.getElementById("lifafaTotalUsers").value = "";
+        document.getElementById("lifafaSecretCode").value = "";
+        loadUserLifafaLogs();
+    };
+
+    window.claimSecretCode = async () => {
+        let code = document.getElementById("claimCodeInput").value.trim().toUpperCase();
+        if(!code) return alert("Please enter a valid claim code!");
+
+        const codeSnap = await get(ref(db, `lifafa_codes/${code}`));
+        if(!codeSnap.exists()) {
+            return alert("Invalid or expired claim code!");
+        }
+
+        let lifafa = codeSnap.val();
+        
+        if(lifafa.claimed_count >= lifafa.total_users_limit) {
+            return alert("Sorry! This campaign has reached its maximum user claim limit.");
+        }
+
+        if(lifafa.claimed_users && lifafa.claimed_users[currentUid]) {
+            return alert("You have already claimed this code!");
+        }
+
+        await processClaimExecution(code, lifafa);
+        alert(`Successfully claimed ₹${lifafa.amount_per_user} reward!`);
+        document.getElementById("claimCodeInput").value = "";
+        loadUserLifafaLogs();
+    };
+
+    async function processClaimExecution(code, lifafa) {
+        const userRef = ref(db, `users/${currentUid}`);
+        const userSnap = await get(userRef);
+        let uBal = userSnap.exists() ? parseFloat(userSnap.val().wallet_balance || 0) : 0;
+        let updatedBal = uBal + lifafa.amount_per_user;
+        
+        await update(userRef, { wallet_balance: updatedBal });
+        globalUserWallet = updatedBal;
+        document.getElementById("userWalletDisplay").innerText = "₹" + globalUserWallet.toFixed(2);
+
+        let newCount = (lifafa.claimed_count || 0) + 1;
+        await update(ref(db, `lifafa_codes/${code}`), { claimed_count: newCount });
+        await set(ref(db, `lifafa_codes/${code}/claimed_users/${currentUid}`), {
+            username: currentUsername,
+            time: Date.now()
+        });
+    }
+
+    async function loadUserLifafaLogs() {
+        const allLifafaSnap = await get(ref(db, "lifafa_codes"));
+        let html = "";
+        globalLifafaLogs = {};
+
+        if(allLifafaSnap.exists()) {
+            let logs = [];
+            allLifafaSnap.forEach(child => {
+                let l = child.val();
+                let isCreator = (l.creator_id === currentUid);
+                let hasClaimed = l.claimed_users && l.claimed_users[currentUid];
+
+                if(isCreator || hasClaimed) {
+                    let type = isCreator ? "CREATED" : "CLAIMED";
+                    logs.push({ key: child.key, type, data: l, time: l.created_at });
+                }
+            });
+
+            logs.sort((a,b) => b.time - a.time);
+
+            logs.forEach(item => {
+                let l = item.data;
+                globalLifafaLogs[item.key] = item;
+                let displayAmt = item.type === "CREATED" ? (l.amount_per_user * l.total_users_limit) : l.amount_per_user;
+                
+                html += `
+                <div class="row" onclick="openTxnModal('${item.key}')">
+                    <div class="row-header">
+                        <span>${l.name} (${item.type === 'CREATED' ? 'Created' : 'Claimed'})</span>
+                        <span class="status ${item.type.toLowerCase()}">${item.type} (₹${displayAmt})</span>
+                    </div>
+                    <div style="font-size:11px; color:var(--sub); margin-top:3px;">Creator: <b>${l.creator_name}</b> | Code: <b>${l.secret_code}</b></div>
+                </div>`;
+            });
+        }
+
+        document.getElementById("historyContainer").innerHTML = html || '<p style="color:var(--sub); text-align:center; font-size:13px;">No history available.</p>';
+    }
+
+    window.openTxnModal = (key) => {
+        let item = globalLifafaLogs[key];
+        if(!item) return;
+        let l = item.data;
+        let timeStr = new Date(l.created_at).toLocaleString();
+
+        let usersHtml = "";
+        if(l.claimed_users) {
+            Object.values(l.claimed_users).forEach(u => {
+                let claimTimeStr = new Date(u.time).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'});
+                usersHtml += `<div class="claimed-user-item"><span>👤 ${u.username}</span><span>🕒 ${claimTimeStr}</span></div>`;
+            });
+        }
+
+        let content = `
+            <div class="modal-detail-row"><span>Campaign Name:</span><span>${l.name}</span></div>
+            <div class="modal-detail-row"><span>Creator Name:</span><span style="color:var(--accent); font-weight:bold;">${l.creator_name}</span></div>
+            <div class="modal-detail-row"><span>Secret Code:</span><span style="font-family:monospace; color:var(--accent); font-weight:800;">${l.secret_code}</span></div>
+            <div class="modal-detail-row"><span>Amount Per User:</span><span>₹${l.amount_per_user}</span></div>
+            <div class="modal-detail-row"><span>Total Users Limit:</span><span>${l.total_users_limit}</span></div>
+            <div class="modal-detail-row"><span>Claimed Count:</span><span style="color:var(--green); font-weight:bold;">${l.claimed_count} / ${l.total_users_limit}</span></div>
+            <div class="modal-detail-row"><span>Created Time:</span><span>${timeStr}</span></div>
+            <div class="claimed-users-box">
+                <div style="font-size:12px; font-weight:800; margin-bottom:6px; text-transform:uppercase; color:var(--sub);">Claimed Users (${l.claimed_count}):</div>
+                ${usersHtml || '<div style="font-size:11px; color:var(--sub);">No claims yet.</div>'}
+            </div>
+        `;
+
+        document.getElementById("modalDetailsContent").innerHTML = content;
+        document.getElementById("txnModal").classList.add("active");
+    };
+
+    window.closeTxnModal = () => {
+        document.getElementById("txnModal").classList.remove("active");
+    };
+</script>
+</body>
+</html>
