@@ -35,14 +35,18 @@
         .section-title { font-size: 13px; font-weight: 800; margin-bottom: 10px; text-transform: uppercase; color: var(--dark); letter-spacing: 0.5px; }
         
         .share-box { background: #f8fafc; border: 2px dashed var(--card-border); border-radius: 16px; padding: 15px; margin-bottom: 20px; text-align: center; }
-        .code-display { font-size: 18px; font-weight: 900; color: var(--accent); margin: 8px 0; letter-spacing: 1px; font-family: monospace; }
+        .code-display { font-size: 15px; font-weight: 700; color: var(--sub); margin: 8px 0; letter-spacing: 0.5px; font-family: monospace; background: #e2e8f0; padding: 8px; border-radius: 8px; display: inline-block; width: 100%; }
         
         .primary-btn { background: var(--dark); color: white; border: none; padding: 12px; font-weight: 700; border-radius: 12px; cursor: pointer; width: 100%; font-size: 14px; transition: opacity 0.2s; }
         .primary-btn:hover { opacity: 0.9; }
         .btn-accent { background: var(--accent); margin-top: 8px; }
 
+        .input-group { margin-top: 15px; text-align: left; }
+        .input-group label { font-size: 11px; font-weight: 700; color: var(--sub); text-transform: uppercase; display: block; margin-bottom: 5px; }
+        .input-group input { width: 100%; padding: 10px; border: 1px solid var(--card-border); border-radius: 10px; font-size: 14px; font-weight: 600; outline: none; background: #fff; }
+
         .logs-container { max-height: 200px; overflow-y: auto; display: flex; flex-direction: column; gap: 8px; }
-        .log-row { display: flex; justify-content: background; justify-content: space-between; background: #f8fafc; border: 1px solid var(--card-border); padding: 12px; border-radius: 12px; font-size: 13px; font-weight: 600; }
+        .log-row { display: flex; justify-content: space-between; background: #f8fafc; border: 1px solid var(--card-border); padding: 12px; border-radius: 12px; font-size: 13px; font-weight: 600; }
         .log-row div span { color: var(--sub); font-size: 11px; display: block; }
     </style>
 </head>
@@ -55,8 +59,8 @@
     </div>
 
     <div class="banner">
-        <h1>Earn 5% Commission</h1>
-        <p>Invite your friends to H4X Games. Whenever they win a bet, you automatically get 5% of their winning amount credited instantly!</p>
+        <h1 id="commissionBannerTitle">Earn Commission</h1>
+        <p id="commissionBannerDesc">Invite your friends to H4X Games. Whenever they play or win, you automatically get your commission credited instantly!</p>
     </div>
 
     <div class="stats-grid">
@@ -70,11 +74,18 @@
         </div>
     </div>
 
-    <div class="section-title">🔗 Your Unique Referral Link</div>
+    <div class="section-title">🔗 Your Referral Link & Code</div>
     <div class="share-box">
-        <p style="font-size: 12px; color: var(--sub);">Share this link with your friends</p>
-        <div class="code-display" id="refCodeDisplay">Loading...</div>
+        <div class="code-display" id="refCodeDisplay">🔒 Link Hidden for Privacy</div>
         <button class="primary-btn btn-accent" onclick="copyReferralLink()">📋 Copy Referral Link</button>
+        
+        <div class="input-group">
+            <label>Have an Uplink / Referral Code?</label>
+            <div style="display:flex; gap:8px;">
+                <input type="text" id="manualRefInput" placeholder="Enter Friend's Code">
+                <button class="primary-btn" style="width:110px; padding:10px;" onclick="applyManualReferral()">Apply</button>
+            </div>
+        </div>
     </div>
 
     <div class="section-title">📋 Commission Earnings Ledger</div>
@@ -85,7 +96,7 @@
 
 <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
-    import { getDatabase, ref, get } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-database.js";
+    import { getDatabase, ref, get, update } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-database.js";
     import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
 
     const firebaseConfig = {
@@ -103,17 +114,24 @@
     const auth = getAuth(app);
 
     let myReferralCode = "";
+    let fullShareableLink = "";
+    let currentAuthUid = "";
 
     onAuthStateChanged(auth, async (user) => {
         if(user) {
-            let uid = user.uid;
-            const userSnap = await get(ref(db, `users/${uid}`));
+            currentAuthUid = user.uid;
+            const userSnap = await get(ref(db, `users/${currentAuthUid}`));
             if(userSnap.exists()) {
                 let userData = userSnap.val();
-                myReferralCode = userData.referral_code || "H4X" + uid.substring(0, 6).toUpperCase();
-                document.getElementById("refCodeDisplay").innerText = window.location.origin + "/index.html?ref=" + myReferralCode;
+                myReferralCode = userData.referral_code || "H4X" + currentAuthUid.substring(0, 6).toUpperCase();
+                fullShareableLink = window.location.origin + "/register.html?ref=" + myReferralCode;
                 
-                loadUserCommissionsAndReferrals(uid, myReferralCode);
+                if(userData.referred_by) {
+                    document.getElementById("manualRefInput").value = userData.referred_by;
+                    document.getElementById("manualRefInput").disabled = true;
+                }
+
+                loadUserCommissionsAndReferrals(currentAuthUid, myReferralCode);
             }
         } else {
             window.location.href = "index.html";
@@ -121,7 +139,16 @@
     });
 
     async function loadUserCommissionsAndReferrals(uid, refCode) {
-        // Count total referrals (users who signed up with this refCode)
+        // Fetch dynamic admin settings for commission rates if configured
+        const settingsSnap = await get(ref(db, "settings"));
+        if(settingsSnap.exists()) {
+            let sData = settingsSnap.val();
+            if(sData.referral_percentage) {
+                document.getElementById("commissionBannerTitle").innerText = `Earn ${sData.referral_percentage}% Commission`;
+            }
+        }
+
+        // Count total referrals
         const allUsersSnap = await get(ref(db, "users"));
         let refCount = 0;
         if(allUsersSnap.exists()) {
@@ -148,7 +175,7 @@
                 
                 html += `
                 <div class="log-row">
-                    <div><b>From: ${l.from_user}</b><span>Period: ${l.period}</span></div>
+                    <div><b>From: ${l.from_user || 'Friend'}</b><span>Source: ${l.source || 'Bonus'}</span></div>
                     <div style="text-align:right;"><span style="color:var(--green); font-weight:800;">+₹${parseFloat(l.amount).toFixed(2)}</span><span style="color:var(--sub);">${timeStr}</span></div>
                 </div>`;
             });
@@ -159,10 +186,26 @@
     }
 
     window.copyReferralLink = () => {
-        let fullLink = document.getElementById("refCodeDisplay").innerText;
-        navigator.clipboard.writeText(fullLink).then(() => {
-            alert("Referral link copied to clipboard!");
+        if(!fullShareableLink) return alert("Loading link, please wait...");
+        navigator.clipboard.writeText(fullShareableLink).then(() => {
+            alert("Referral link copied to clipboard successfully!");
         });
+    };
+
+    window.applyManualReferral = async () => {
+        let codeInput = document.getElementById("manualRefInput").value.trim().toUpperCase();
+        if(!codeInput) return alert("Please enter a valid referral code.");
+        if(codeInput === myReferralCode) return alert("You cannot refer yourself!");
+
+        const userRef = ref(db, `users/${currentAuthUid}`);
+        const snap = await get(userRef);
+        if(snap.exists() && snap.val().referred_by) {
+            return alert("You have already applied a referral code!");
+        }
+
+        await update(userRef, { referred_by: codeInput });
+        alert("Referral code applied successfully!");
+        document.getElementById("manualRefInput").disabled = true;
     };
 </script>
 </body>
