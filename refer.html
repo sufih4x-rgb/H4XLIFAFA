@@ -1,0 +1,169 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>H4X Premium - Referral Program</title>
+    <style>
+        :root {
+            --bg-main: #f1f5f9;
+            --card-bg: #ffffff;
+            --dark: #0f172a;
+            --sub: #64748b;
+            --green: #2ed573;
+            --accent: #6366f1;
+            --card-border: #e2e8f0;
+        }
+        * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Segoe UI', sans-serif; }
+        body { background: var(--bg-main); color: var(--dark); padding: 15px; display: flex; flex-direction: column; align-items: center; min-height: 100vh; }
+        
+        .container { width: 100%; max-width: 480px; background: var(--card-bg); border-radius: 24px; padding: 20px; box-shadow: 0 10px 30px rgba(0,0,0,0.05); margin-bottom: 20px; }
+        .header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; border-bottom: 1px solid var(--card-border); padding-bottom: 12px; }
+        .header h2 { font-size: 18px; font-weight: 800; color: var(--dark); }
+        .back-btn { font-size: 13px; font-weight: 700; color: var(--accent); text-decoration: none; cursor: pointer; }
+
+        .banner { background: linear-gradient(135deg, #6366f1, #4f46e5); color: white; padding: 20px; border-radius: 18px; text-align: center; margin-bottom: 20px; box-shadow: 0 8px 20px rgba(99,102,241,0.3); }
+        .banner h1 { font-size: 24px; font-weight: 900; margin-bottom: 6px; }
+        .banner p { font-size: 13.5px; opacity: 0.9; line-height: 1.4; }
+
+        .stats-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 20px; }
+        .stat-card { background: #f8fafc; border: 1px solid var(--card-border); padding: 15px; border-radius: 14px; text-align: center; }
+        .stat-card h4 { font-size: 11px; color: var(--sub); text-transform: uppercase; letter-spacing: 0.5px; }
+        .stat-card h2 { font-size: 20px; font-weight: 800; color: var(--dark); margin-top: 5px; }
+        .stat-card h2.highlight { color: var(--green); }
+
+        .section-title { font-size: 13px; font-weight: 800; margin-bottom: 10px; text-transform: uppercase; color: var(--dark); letter-spacing: 0.5px; }
+        
+        .share-box { background: #f8fafc; border: 2px dashed var(--card-border); border-radius: 16px; padding: 15px; margin-bottom: 20px; text-align: center; }
+        .code-display { font-size: 18px; font-weight: 900; color: var(--accent); margin: 8px 0; letter-spacing: 1px; font-family: monospace; }
+        
+        .primary-btn { background: var(--dark); color: white; border: none; padding: 12px; font-weight: 700; border-radius: 12px; cursor: pointer; width: 100%; font-size: 14px; transition: opacity 0.2s; }
+        .primary-btn:hover { opacity: 0.9; }
+        .btn-accent { background: var(--accent); margin-top: 8px; }
+
+        .logs-container { max-height: 200px; overflow-y: auto; display: flex; flex-direction: column; gap: 8px; }
+        .log-row { display: flex; justify-content: background; justify-content: space-between; background: #f8fafc; border: 1px solid var(--card-border); padding: 12px; border-radius: 12px; font-size: 13px; font-weight: 600; }
+        .log-row div span { color: var(--sub); font-size: 11px; display: block; }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <div class="header">
+        <h2>🤝 Referral Program</h2>
+        <a class="back-btn" href="dashboard.html">← Back to App</a>
+    </div>
+
+    <div class="banner">
+        <h1>Earn 5% Commission</h1>
+        <p>Invite your friends to H4X Games. Whenever they win a bet, you automatically get 5% of their winning amount credited instantly!</p>
+    </div>
+
+    <div class="stats-grid">
+        <div class="stat-card">
+            <h4>Total Referrals</h4>
+            <h2 id="totalReferralsCount">0</h2>
+        </div>
+        <div class="stat-card">
+            <h4>Commission Earned</h4>
+            <h2 class="highlight" id="totalCommissionEarned">₹0.00</h2>
+        </div>
+    </div>
+
+    <div class="section-title">🔗 Your Unique Referral Link</div>
+    <div class="share-box">
+        <p style="font-size: 12px; color: var(--sub);">Share this link with your friends</p>
+        <div class="code-display" id="refCodeDisplay">Loading...</div>
+        <button class="primary-btn btn-accent" onclick="copyReferralLink()">📋 Copy Referral Link</button>
+    </div>
+
+    <div class="section-title">📋 Commission Earnings Ledger</div>
+    <div class="logs-container" id="commissionLogsWrapper">
+        <p style="color: var(--sub); text-align: center; font-size: 13px;">No commission history found.</p>
+    </div>
+</div>
+
+<script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
+    import { getDatabase, ref, get } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-database.js";
+    import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
+
+    const firebaseConfig = {
+        apiKey: "AIzaSyD2TYdbhZwLSQJEfV2tHOawK-XzKvOKlkQ",
+        authDomain: "h4xlifafa.firebaseapp.com",
+        databaseURL: "https://h4xlifafa-default-rtdb.firebaseio.com",
+        projectId: "h4xlifafa",
+        storageBucket: "h4xlifafa.firebasestorage.app",
+        messagingSenderId: "51114522531",
+        appId: "1:51114522531:web:face1332e055ed44690c16"
+    };
+
+    const app = initializeApp(firebaseConfig);
+    const db = getDatabase(app);
+    const auth = getAuth(app);
+
+    let myReferralCode = "";
+
+    onAuthStateChanged(auth, async (user) => {
+        if(user) {
+            let uid = user.uid;
+            const userSnap = await get(ref(db, `users/${uid}`));
+            if(userSnap.exists()) {
+                let userData = userSnap.val();
+                myReferralCode = userData.referral_code || "H4X" + uid.substring(0, 6).toUpperCase();
+                document.getElementById("refCodeDisplay").innerText = window.location.origin + "/index.html?ref=" + myReferralCode;
+                
+                loadUserCommissionsAndReferrals(uid, myReferralCode);
+            }
+        } else {
+            window.location.href = "index.html";
+        }
+    });
+
+    async function loadUserCommissionsAndReferrals(uid, refCode) {
+        // Count total referrals (users who signed up with this refCode)
+        const allUsersSnap = await get(ref(db, "users"));
+        let refCount = 0;
+        if(allUsersSnap.exists()) {
+            allUsersSnap.forEach(child => {
+                if(child.val().referred_by === refCode) {
+                    refCount++;
+                }
+            });
+        }
+        document.getElementById("totalReferralsCount").innerText = refCount;
+
+        // Load commission ledger
+        const commSnap = await get(ref(db, `users/${uid}/commissions`));
+        let totalComm = 0;
+        let html = "";
+        
+        if(commSnap.exists()) {
+            let logs = [];
+            commSnap.forEach(c => { logs.push(c.val()); });
+            logs.reverse().forEach(l => {
+                totalComm += parseFloat(l.amount || 0);
+                let dateObj = new Date(l.time);
+                let timeStr = dateObj.toLocaleDateString() + " " + dateObj.toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'});
+                
+                html += `
+                <div class="log-row">
+                    <div><b>From: ${l.from_user}</b><span>Period: ${l.period}</span></div>
+                    <div style="text-align:right;"><span style="color:var(--green); font-weight:800;">+₹${parseFloat(l.amount).toFixed(2)}</span><span style="color:var(--sub);">${timeStr}</span></div>
+                </div>`;
+            });
+        }
+
+        document.getElementById("totalCommissionEarned").innerText = "₹" + totalComm.toFixed(2);
+        if(html) document.getElementById("commissionLogsWrapper").innerHTML = html;
+    }
+
+    window.copyReferralLink = () => {
+        let fullLink = document.getElementById("refCodeDisplay").innerText;
+        navigator.clipboard.writeText(fullLink).then(() => {
+            alert("Referral link copied to clipboard!");
+        });
+    };
+</script>
+</body>
+</html>
