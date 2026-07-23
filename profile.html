@@ -20,8 +20,6 @@
         .device-info-item { display: flex; justify-content: space-between; margin-bottom: 8px; font-size: 14px; }
         .device-info-item span:first-child { color: #666; font-weight: 600; }
         .device-info-item span:last-child { color: #1a1a1a; font-weight: 700; }
-        .overlay { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: #ffffff; justify-content: center; align-items: center; z-index: 2000; padding: 20px; }
-        .pin-box { background: #ffffff; padding: 40px 30px; border-radius: 20px; box-shadow: 0 15px 50px rgba(0,0,0,0.1); text-align: center; max-width: 380px; width: 100%; border: 1px solid #eee; }
         .nav-btn { display: inline-block; margin-top: 15px; color: #888; text-decoration: none; font-size: 14px; font-weight: 600; cursor: pointer; margin-right: 15px; }
     </style>
 </head>
@@ -55,37 +53,12 @@
                 <input type="password" id="prof-password" placeholder="••••••••">
             </div>
             <button type="button" id="update-pwd-btn" class="glow-btn">CHANGE PASSWORD</button>
-            
-            <h3>🔒 Custom Auto-Lock System</h3>
-            <div class="input-group">
-                <label>Set Auto-Lock Time (In Minutes, Max 30)</label>
-                <input type="number" id="lock-time-input" min="1" max="30" placeholder="e.g. 5">
-            </div>
-            <button type="button" id="save-timer-btn" class="glow-btn" style="background: #2ed573; box-shadow: 0 4px 15px rgba(46, 213, 115, 0.3);">SAVE CUSTOM LOCK TIME</button>
         </form>
         
         <center>
             <span class="nav-btn" onclick="window.location.href='dashboard.html'" style="color: #ff4757;">🏠 Dashboard</span>
             <span class="nav-btn" id="logout-link">Logout</span>
         </center>
-    </div>
-
-    <!-- PIN GENERATION OVERLAY -->
-    <div class="overlay" id="generate-pin-overlay">
-        <div class="pin-box">
-            <h2>Setup Secure PIN</h2>
-            <input type="password" id="new-pin-input" maxlength="4" style="text-align: center; font-size: 24px; letter-spacing: 10px; width:100%; padding:10px; margin: 20px 0;">
-            <button id="save-pin-btn" class="glow-btn">GENERATE PIN</button>
-        </div>
-    </div>
-
-    <!-- ENTER PIN LOCK SCREEN -->
-    <div class="overlay" id="app-lock-overlay">
-        <div class="pin-box">
-            <h2>🔒 App Locked</h2>
-            <input type="password" id="verify-pin-input" maxlength="4" placeholder="••••" style="text-align: center; font-size: 24px; letter-spacing: 10px; width:100%; padding:10px; margin: 20px 0;">
-            <button id="unlock-btn" class="glow-btn">UNLOCK NOW</button>
-        </div>
     </div>
 
     <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
@@ -106,7 +79,7 @@
         const auth = firebase.auth();
         const db = firebase.database();
 
-        let currentUid = null, userSecurePin = null, lockTimeout = null, autoLockDuration = 30000;
+        let currentUid = null;
 
         auth.onAuthStateChanged((user) => {
             if (user) { currentUid = user.uid; loadUserProfileData(); detectDevice(); }
@@ -130,67 +103,15 @@
                 if (data) {
                     document.getElementById('prof-username').value = data.username || "";
                     document.getElementById('prof-email').value = data.email || "";
-                    if (data.lock_duration) {
-                        autoLockDuration = parseInt(data.lock_duration);
-                        document.getElementById('lock-time-input').value = autoLockDuration / 60000;
-                    }
-                    if (!data.security_pin) { document.getElementById('generate-pin-overlay').style.display = 'flex'; }
-                    else { userSecurePin = data.security_pin; document.getElementById('generate-pin-overlay').style.display = 'none'; checkPersistentLock(); }
                 }
             });
-        }
-
-        // Custom Time Save Button (Minutes to Milliseconds Conversion)
-        document.getElementById('save-timer-btn').addEventListener('click', () => {
-            let minutes = parseInt(document.getElementById('lock-time-input').value);
-            if (!minutes || minutes < 1 || minutes > 30) return alert("Please enter minutes between 1 and 30!");
-            
-            let msValue = minutes * 60000; // minutes ko milliseconds me badla
-            db.ref('users/' + currentUid).update({ lock_duration: msValue.toString() }).then(() => {
-                alert(`Lock time set to ${minutes} Minutes!`);
-                localStorage.setItem('last_unlocked_time', Date.now()); // time reset
-                autoLockDuration = msValue;
-                resetActivityTimer();
-            });
-        });
-
-        // Smart Persistent Lock Validation
-        function checkPersistentLock() {
-            let lastUnlocked = localStorage.getItem('last_unlocked_time');
-            let now = Date.now();
-            if (!lastUnlocked || (now - parseInt(lastUnlocked) > autoLockDuration)) {
-                document.getElementById('app-lock-overlay').style.display = 'flex';
-            } else {
-                document.getElementById('app-lock-overlay').style.display = 'none';
-                startActivityTimer();
-            }
-        }
-
-        document.getElementById('unlock-btn').addEventListener('click', () => {
-            if (document.getElementById('verify-pin-input').value.trim() === userSecurePin) {
-                document.getElementById('app-lock-overlay').style.display = 'none';
-                localStorage.setItem('last_unlocked_time', Date.now()); // Lock timer state saved persistently
-                document.getElementById('verify-pin-input').value = "";
-                startActivityTimer();
-            } else { alert("Invalid PIN!"); }
-        });
-
-        function startActivityTimer() {
-            window.onmousemove = resetActivityTimer; window.onclick = resetActivityTimer; window.onkeydown = resetActivityTimer;
-            resetActivityTimer();
-        }
-        function resetActivityTimer() {
-            clearTimeout(lockTimeout);
-            if (document.getElementById('app-lock-overlay').style.display === 'flex') return;
-            // Jab tak user active hai, tab tak 'last_unlocked_time' continuously aage badhta rahega
-            localStorage.setItem('last_unlocked_time', Date.now());
-            lockTimeout = setTimeout(() => { document.getElementById('app-lock-overlay').style.display = 'flex'; }, autoLockDuration);
         }
 
         document.getElementById('update-details-btn').addEventListener('click', () => {
             db.ref('users/' + currentUid).update({ username: document.getElementById('prof-username').value.trim() }).then(() => alert("Saved!"));
         });
-        document.getElementById('logout-link').addEventListener('click', () => { auth.signOut(); localStorage.clear(); });
+        
+        document.getElementById('logout-link').addEventListener('click', () => { auth.signOut(); localStorage.clear(); window.location.href = "index.html"; });
     </script>
 </body>
 </html>
