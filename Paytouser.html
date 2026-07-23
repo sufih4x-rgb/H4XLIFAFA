@@ -67,16 +67,6 @@
         .amt-sent { color: #ff4757; }
         .amt-received { color: #2ed573; }
 
-        /* 🔒 Security PIN Modal Window Overlay */
-        .pin-overlay { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.4); justify-content: center; align-items: center; z-index: 9999; padding: 20px; backdrop-filter: blur(4px); }
-        .pin-popup { background: #ffffff; padding: 32px 24px; border-radius: 24px; text-align: center; max-width: 360px; width: 100%; box-shadow: 0 20px 40px rgba(0,0,0,0.12); border: 1px solid #edf2f7; }
-        .pin-popup h3 { font-size: 20px; font-weight: 800; color: #1a202c; }
-        .pin-input { text-align: center; font-size: 26px; letter-spacing: 14px; width: 100%; padding: 12px; margin: 24px 0; border: 2px solid #edf2f7; border-radius: 12px; outline: none; background: #f7fafc; font-weight: 700; transition: border-color 0.2s; }
-        .pin-input:focus { border-color: #ff4757; background: #fff; }
-        .popup-btns { display: flex; gap: 12px; }
-        .btn-cancel { flex: 1; padding: 14px; border: 1px solid #cbd5e0; background: #fff; border-radius: 12px; font-weight: 700; color: #4a5568; cursor: pointer; transition: background 0.2s; }
-        .btn-confirm { flex: 1; padding: 14px; border: none; background: #2ed573; color: white; border-radius: 12px; font-weight: 700; cursor: pointer; box-shadow: 0 4px 12px rgba(46, 213, 115, 0.2); }
-
         /* 🧾 PREMIUM DYNAMIC RECEIPT FLOATING BOX (MODAL) */
         .receipt-overlay { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.4); justify-content: center; align-items: center; z-index: 9000; padding: 20px; backdrop-filter: blur(4px); }
         .receipt-box { background: #ffffff; width: 100%; max-width: 380px; border-radius: 24px; padding: 30px 24px; text-align: center; box-shadow: 0 25px 50px rgba(0,0,0,0.15); border: 1px solid #edf2f7; position: relative; animation: slideUp 0.3s cubic-bezier(0.16, 1, 0.3, 1); }
@@ -104,7 +94,6 @@
     </style>
 </head>
 <body>
-
     <div class="container">
         <!-- Header Navigation -->
         <div class="back-header">
@@ -137,7 +126,7 @@
                 <textarea id="comment-input" rows="2" placeholder="Optional notes..."></textarea>
             </div>
 
-            <button class="btn-pay" id="open-pin-popup-btn">PROCEED TO PAY</button>
+            <button class="btn-pay" id="execute-pay-btn">CONFIRM PAY</button>
         </div>
 
         <!-- Recent Logs Section -->
@@ -145,19 +134,6 @@
             <div class="section-title">Recent Wallet Transfers</div>
             <div class="history-list" id="txn-history-container">
                 <p style="color:#a0aec0; font-size:13px; text-align:center; padding:20px; font-weight:600;">Loading transfers...</p>
-            </div>
-        </div>
-    </div>
-
-    <!-- 🔒 Security PIN Modal Popup -->
-    <div class="pin-overlay" id="pin-modal">
-        <div class="pin-popup">
-            <h3>🔒 Authorize Payment</h3>
-            <p style="font-size: 13px; color: #718096; margin-top: 6px;">Enter your 4-digit security PIN to confirm.</p>
-            <input type="password" id="secure-pin-input" class="pin-input" maxlength="4" placeholder="••••">
-            <div class="popup-btns">
-                <button class="btn-cancel" id="close-pin-popup-btn">Cancel</button>
-                <button class="btn-confirm" id="execute-pay-btn">CONFIRM PAY</button>
             </div>
         </div>
     </div>
@@ -210,7 +186,7 @@
         const auth = firebase.auth();
         const db = firebase.database();
 
-        let currentUid = null, myCurrentBalance = 0, mySavedSecurePin = "";
+        let currentUid = null, myCurrentBalance = 0;
         let myOwnPhoneNum = "", myOwnUsername = "";
         let verifiedReceiverUid = null;
 
@@ -221,7 +197,6 @@
                     const data = snapshot.val();
                     if (data) {
                         myCurrentBalance = data.wallet_balance || 0;
-                        mySavedSecurePin = data.security_pin;
                         myOwnPhoneNum = data.phone || "";
                         myOwnUsername = data.username || "";
                         document.getElementById('my-wallet-balance').innerText = "₹" + myCurrentBalance.toFixed(2);
@@ -239,7 +214,7 @@
             if(inputVal.startsWith('@')) inputVal = inputVal.substring(1);
             
             const statusBox = document.getElementById('user-status-msg-box');
-            const mainPayBtn = document.getElementById('open-pin-popup-btn');
+            const mainPayBtn = document.getElementById('execute-pay-btn');
             
             if(!inputVal) {
                 statusBox.style.display = "none";
@@ -270,7 +245,6 @@
                 if(users) {
                     Object.keys(users).forEach(uid => {
                         const u = users[uid];
-                        // Match mapping with your structured register configurations
                         if(u.username === inputVal || u.phone === inputVal) {
                             found = true;
                             if(uid === currentUid) {
@@ -297,39 +271,23 @@
             });
         });
 
-        const pinModal = document.getElementById('pin-modal');
-        document.getElementById('open-pin-popup-btn').addEventListener('click', () => {
+        // ⚡ INSTANT DEBIT-CREDIT WALLET ENGINE VIA REALTIME BRANCH NODES
+        document.getElementById('execute-pay-btn').addEventListener('click', () => {
             const amount = parseFloat(document.getElementById('amount-input').value);
-
+            
             if (!verifiedReceiverUid) return alert("Verify a valid active recipient account first!");
             if (isNaN(amount) || amount <= 0) return alert("Enter a valid numerical payment value!");
             if (amount > myCurrentBalance) return alert("Insufficient wallet balance available!");
 
-            pinModal.style.display = "flex";
-            document.getElementById('secure-pin-input').focus();
-        });
-
-        document.getElementById('close-pin-popup-btn').addEventListener('click', () => {
-            pinModal.style.display = "none";
-            document.getElementById('secure-pin-input').value = "";
-        });
-
-        // ⚡ INSTANT DEBIT-CREDIT WALLET ENGINE VIA REALTIME BRANCH NODES
-        document.getElementById('execute-pay-btn').addEventListener('click', () => {
-            const enteredPin = document.getElementById('secure-pin-input').value.trim();
-            if (enteredPin !== mySavedSecurePin) {
-                return alert("Incorrect security PIN logic validation failed!");
-            }
-
-            const sendAmount = parseFloat(document.getElementById('amount-input').value);
+            const sendAmount = amount;
             const userComment = document.getElementById('comment-input').value.trim() || "No message attached";
 
             document.getElementById('execute-pay-btn').disabled = true;
-            document.getElementById('execute-pay-btn').innerText = "Verifying...";
+            document.getElementById('execute-pay-btn').innerText = "Processing...";
 
             db.ref('users/' + verifiedReceiverUid + '/wallet_balance').once('value', (snap) => {
                 let currentReceiverBal = snap.val() || 0;
-
+                
                 const updateObject = {};
                 updateObject[`users/${currentUid}/wallet_balance`] = myCurrentBalance - sendAmount;
                 updateObject[`users/${verifiedReceiverUid}/wallet_balance`] = currentReceiverBal + sendAmount;
@@ -353,8 +311,6 @@
                         document.getElementById('comment-input').value = "";
                         document.getElementById('user-status-msg-box').style.display = "none";
                     }
-                    pinModal.style.display = "none";
-                    document.getElementById('secure-pin-input').value = "";
                     document.getElementById('execute-pay-btn').disabled = false;
                     document.getElementById('execute-pay-btn').innerText = "CONFIRM PAY";
                 });
@@ -389,7 +345,6 @@
 
                             const card = document.createElement('div');
                             card.className = "txn-card";
-
                             const d = new Date(txn.timestamp);
                             const formattedTime = d.toLocaleDateString() + " " + d.toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'});
 
@@ -410,13 +365,8 @@
                                 const fullDateStr = d.toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' }) + " at " + d.toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: true });
                                 
                                 const rcptIcon = document.getElementById('rcpt-icon-element');
-                                if (isSender) {
-                                    rcptIcon.className = "receipt-icon icon-danger";
-                                    rcptIcon.innerText = "✓";
-                                } else {
-                                    rcptIcon.className = "receipt-icon icon-success";
-                                    rcptIcon.innerText = "✓";
-                                }
+                                rcptIcon.className = isSender ? "receipt-icon icon-danger" : "receipt-icon icon-success";
+                                rcptIcon.innerText = "✓";
 
                                 document.getElementById('rcpt-status-title').innerText = isSender ? "Money Sent Successfully" : "Money Received Successfully";
                                 document.getElementById('rcpt-amount-val').innerText = `₹${(txn.amount || 0).toFixed(2)}`;
