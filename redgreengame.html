@@ -25,9 +25,9 @@
         .wallet-bar { background: linear-gradient(135deg, #0f172a, #1e293b); color: white; padding: 15px; border-radius: 16px; display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; }
         .wallet-bar h2 { font-size: 22px; font-weight: 700; color: var(--green); }
 
-        .chart-box { background: #fafafa; border: 2px dashed #cbd5e1; border-radius: 16px; padding: 12px; margin-bottom: 20px; display: grid; grid-template-rows: repeat(4, 1fr); gap: 6px; min-height: 120px; direction: rtl; }
-        .chart-row { display: flex; gap: 6px; justify-content: flex-start; flex-direction: row-reverse; }
-        .matrix-dot { width: 24px; height: 24px; border-radius: 6px; display: flex; align-items: center; justify-content: center; font-size: 12px; font-weight: 900; color: white; }
+        .chart-box { background: #fafafa; border: 2px dashed #cbd5e1; border-radius: 16px; padding: 12px; margin-bottom: 20px; display: grid; grid-template-rows: repeat(4, 1fr); gap: 6px; min-height: 120px; overflow-x: auto; }
+        .chart-row { display: flex; gap: 6px; justify-content: flex-start; flex-direction: row; }
+        .matrix-dot { width: 24px; height: 24px; border-radius: 6px; display: flex; align-items: center; justify-content: center; font-size: 12px; font-weight: 900; color: white; flex-shrink: 0; }
         .dot-R { background: var(--red); box-shadow: 0 0 6px rgba(255,71,87,0.4); }
         .dot-G { background: var(--green); box-shadow: 0 0 6px rgba(46,213,115,0.4); }
 
@@ -113,7 +113,7 @@
     <div class="logs-title">📋 Personal Settlement Ledger Transactions (Click rows for receipt)</div>
     <div class="logs-container" id="personalLogsWrapper"></div>
 
-    <div class="floating-overlay" id="animationOverlay" style="background: rgba(255,255,255,0.95);">
+    <div class="floating-overlay" id="animationOverlay" style="background: rgba(255,255,255,0.96);">
         <div id="popBoxContent" style="text-align:center;"></div>
     </div>
 </div>
@@ -255,12 +255,23 @@
             document.getElementById("periodDisplay").innerText = periodStringId;
             document.getElementById("timerDisplay").innerText = `00:${remainderSeconds < 10 ? '0' : ''}${remainderSeconds}`;
 
+            // 5 TO 1 FLOATING COUNTDOWN ANIMATION WHEN LAST 5 SECONDS REMAIN
+            if(remainderSeconds >= 1 && remainderSeconds <= 5) {
+                document.getElementById("popBoxContent").innerHTML = `
+                    <h2 style="color:var(--sub); font-size:16px; font-weight:700; text-transform:uppercase; margin-bottom:5px;">Period Ending In</h2>
+                    <h1 style="color:var(--red); font-size:75px; font-weight:900; animation: scaleUp 0.5s ease; font-family:monospace;">${remainderSeconds}</h1>
+                    <p style="color:var(--dark); font-weight:700; font-size:14px; margin-top:5px;">Locking Stakes Matrix...</p>
+                `;
+                document.getElementById("animationOverlay").classList.add("active");
+            } else if(remainderSeconds === 6) {
+                document.getElementById("animationOverlay").classList.remove("active");
+            }
+
             if(document.getElementById("adminControlDashboard").style.display === "block") {
                 syncAdminLiveStakesMonitor(periodStringId);
             }
 
             if(remainderSeconds === 60) {
-                document.getElementById("animationOverlay").classList.remove("active");
                 executeServerlessPeriodResolverAlgo(periodStringId - 1);
             }
         }, 1000);
@@ -285,12 +296,19 @@
                 greenPool = parseFloat(stakesSnap.val().Green?.total_money || 0);
             }
 
+            // SMART ADMIN PROFIT & MULTI-USER ALGORITHM 
             if(redPool > 0 || greenPool > 0) {
-                if(redPool > greenPool) targetOutcome = "G";
-                else if(greenPool > redPool) targetOutcome = "R";
-                else targetOutcome = Math.random() < 0.5 ? "R" : "G";
+                // If admin profit condition is favorable (multiple users / uneven pools)
+                if(redPool > greenPool) {
+                    // Make green win to drain red pool or distribute based on profit target
+                    targetOutcome = Math.random() < 0.65 ? "G" : "R";
+                } else if(greenPool > redPool) {
+                    targetOutcome = Math.random() < 0.65 ? "R" : "G";
+                } else {
+                    targetOutcome = Math.random() < 0.5 ? "R" : "G";
+                }
             } else {
-                targetOutcome = Math.random() < 0.6 ? "R" : "G";
+                targetOutcome = Math.random() < 0.5 ? "R" : "G";
             }
         }
 
@@ -367,14 +385,33 @@
                     });
                 }
 
-                animHtml = `<h1 style="color:var(--green); font-size:36px; font-weight:900;">🎉 MATCH WINNER!</h1><p style="font-size:18px; margin-top:5px; font-weight:bold;">Credits: +₹${gain.toFixed(2)}</p>`;
+                // STYLISH FLOATING RESULT WIN CARD
+                animHtml = `
+                    <div style="padding:10px;">
+                        <div style="font-size:45px; margin-bottom:5px;">🎉</div>
+                        <h1 style="color:var(--green); font-size:28px; font-weight:900;">VICTORY RESULT!</h1>
+                        <p style="font-size:15px; margin-top:8px; font-weight:700; color:var(--dark);">Period: ${pId}</p>
+                        <p style="font-size:18px; margin-top:4px; font-weight:800; color:var(--green);">Credit Added: +₹${gain.toFixed(2)}</p>
+                    </div>
+                `;
+
             } else {
                 await update(personalBetRef, { status: "lost", payout: 0 });
-                animHtml = `<h1 style="color:var(--red); font-size:36px; font-weight:900;">💥 LOSS INSIGHT</h1><p style="color:var(--sub); margin-top:5px;">Period Index: ${pId}</p>`;
-            }
 
+                // STYLISH FLOATING RESULT LOSS CARD
+                animHtml = `
+                    <div style="padding:10px;">
+                        <div style="font-size:45px; margin-bottom:5px;">📉</div>
+                        <h1 style="color:var(--red); font-size:28px; font-weight:900;">ROUND LOSS</h1>
+                        <p style="font-size:15px; margin-top:8px; font-weight:700; color:var(--dark);">Period Index: ${pId}</p>
+                        <p style="font-size:14px; margin-top:4px; color:var(--sub);">Better luck next round! Capital adjusted.</p>
+                    </div>
+                `;
+            }
+            
             document.getElementById("popBoxContent").innerHTML = animHtml;
             document.getElementById("animationOverlay").classList.add("active");
+
             setTimeout(() => document.getElementById("animationOverlay").classList.remove("active"), 4500);
         }
         renderPersonalLogsViewLedger();
@@ -386,6 +423,7 @@
         if(snap.exists()) {
             let logs = [];
             snap.forEach(c => { logs.push({ pId: c.key, ...c.val() }); });
+
             logs.reverse().forEach(l => {
                 let colorClass = l.status === "won" ? "var(--green)" : l.status === "lost" ? "var(--red)" : "orange";
                 let clickActionString = `openTxDetailPopup('${l.pId}', '${l.time}', '${l.bet_on}', '${l.amount}', '${l.status}')`;
@@ -456,7 +494,6 @@
 
         const verifyProfileNode = await get(ref(db, `users/${uid}`));
         let rootBalance = parseFloat(verifyProfileNode.val().wallet_balance || 0);
-
         if(rootBalance < betAmountValue) return alert("Insufficient Profile Funds Wallet Error.");
 
         const targetBetRefPath = ref(db, `user_bets/${uid}/${currentPeriodGlobal}`);
@@ -464,7 +501,6 @@
         if(duplicateCheckSnap.exists()) return alert("Multiple predictions on identical indices prohibited.");
 
         await update(ref(db, `users/${uid}`), { wallet_balance: rootBalance - betAmountValue });
-
         await set(targetBetRefPath, {
             bet_on: targetActiveColor,
             amount: betAmountValue,
